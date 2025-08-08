@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>STL City SC Tools</title>
+  <!-- Simple web UI for exercising the API endpoints provided by the server -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <style>
+    body {
+      background: #f6f7fb;
+    }
+    section {
+      background: #fff;
+      border-radius: .5rem;
+      box-shadow: 0 0.25rem 0.5rem rgba(0,0,0,0.1);
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    pre {
+      white-space: pre-wrap;
+    }
+    .dialogue-entry {
+      background: #f8f9fa;
+    }
+  </style>
+</head>
+<body>
+  <div class="container my-4">
+    <h1 class="text-center mb-4">STL City SC Tools</h1>
+
+    <div class="mb-4">
+      <label for="apiBase" class="form-label">API Base URL</label>
+      <input id="apiBase" type="text" class="form-control" value="https://arstesting.onrender.com">
+    </div>
+
+    <div id="episodeWrapper" class="p-3 mb-4 border border-info rounded" style="background:#e8f8ff;">
+    <section id="latest-section">
+      <h2 class="h4">Latest STL City SC Post <small class="text-muted">(/stlcitysc/latest-post)</small></h2>
+      <div class="input-group mb-2" style="max-width: 200px;">
+        <span class="input-group-text">Pages</span>
+        <input id="latestPages" type="number" class="form-control" min="1" value="1">
+      </div>
+      <button id="fetchLatestBtn" class="btn btn-info mb-2">
+        <i class="bi bi-newspaper"></i> Fetch Latest
+      </button>
+      <div id="latestPost" class="row g-2"></div>
+    </section>
+    <section id="episode-section">
+      <h2 class="h4">Generate Episode <small class="text-muted">(/stlcitysc/generate-episode)</small></h2>
+      <div class="mb-2">
+        <label class="form-label">Article IDs (comma or space separated)</label>
+        <input id="epArticleId" type="text" class="form-control">
+      </div>
+      <div class="mb-2">
+        <label class="form-label">System Prompt</label>
+        <select id="epPromptSelect" class="form-select"></select>
+      </div>
+      <div class="row g-2 mb-3">
+        <div class="col">
+          <label class="form-label">Host A Name</label>
+          <input id="epHostAName" class="form-control" value="Kevin">
+        </div>
+        <div class="col">
+          <label class="form-label">Host A Voice</label>
+            <select id="epHostAVoice" class="form-select">
+              <option>Zephyr</option>
+              <option>Puck</option>
+              <option>Charon</option>
+              <option>Kore</option>
+              <option>Fenrir</option>
+              <option>Leda</option>
+              <option>Orus</option>
+              <option>Aoede</option>
+              <option>Callirrhoe</option>
+              <option>Autonoe</option>
+              <option>Enceladus</option>
+              <option>Iapetus</option>
+              <option>Umbriel</option>
+              <option>Algieba</option>
+              <option>Despina</option>
+              <option>Erinome</option>
+              <option>Algenib</option>
+              <option>Rasalgethi</option>
+              <option>Laomedeia</option>
+              <option>Achernar</option>
+              <option>Alnilam</option>
+              <option>Schedar</option>
+              <option>Gacrux</option>
+              <option>Pulcherrima</option>
+              <option selected>Achird</option>
+              <option>Zubenelgenubi</option>
+              <option>Vindemiatrix</option>
+              <option>Sadachbia</option>
+              <option>Sadaltager</option>
+              <option>Sulafat</option>
+            </select>
+        </div>
+      </div>
+      <div class="row g-2 mb-3">
+        <div class="col">
+          <label class="form-label">Host B Name</label>
+          <input id="epHostBName" class="form-control" value="Abby">
+        </div>
+        <div class="col">
+          <label class="form-label">Host B Voice</label>
+            <select id="epHostBVoice" class="form-select">
+              <option>Zephyr</option>
+              <option>Puck</option>
+              <option>Charon</option>
+              <option selected>Kore</option>
+              <option>Fenrir</option>
+              <option>Leda</option>
+              <option>Orus</option>
+              <option>Aoede</option>
+              <option>Callirrhoe</option>
+              <option>Autonoe</option>
+              <option>Enceladus</option>
+              <option>Iapetus</option>
+              <option>Umbriel</option>
+              <option>Algieba</option>
+              <option>Despina</option>
+              <option>Erinome</option>
+              <option>Algenib</option>
+              <option>Rasalgethi</option>
+              <option>Laomedeia</option>
+              <option>Achernar</option>
+              <option>Alnilam</option>
+              <option>Schedar</option>
+              <option>Gacrux</option>
+              <option>Pulcherrima</option>
+              <option>Achird</option>
+              <option>Zubenelgenubi</option>
+              <option>Vindemiatrix</option>
+              <option>Sadachbia</option>
+              <option>Sadaltager</option>
+              <option>Sulafat</option>
+            </select>
+      </div>
+      </div>
+      <div class="mb-2">
+        <label class="form-label">Voice Context</label>
+        <input id="epVoiceContext" class="form-control" value="Read aloud in a charismatic, fun, sports podcast tone.">
+      </div>
+      <div class="mb-2">
+        <label class="form-label">Prompt Tweak</label>
+        <textarea id="epPromptTweak" class="form-control" rows="2" placeholder="Extra instructions for the model (optional)"></textarea>
+      </div>
+      <button id="generateEpisodeBtn" class="btn btn-info mb-2">
+        <i class="bi bi-broadcast"></i> Generate Episode
+      </button>
+      <div id="episodeProgress" class="progress mb-2" style="height:6px; display:none;">
+        <div class="progress-bar progress-bar-striped progress-bar-animated" style="width:100%"></div>
+      </div>
+      <audio id="episodePlayer" class="w-100 mb-2" controls hidden></audio>
+      <div id="episodeThumb" class="border rounded p-3 mb-2 text-center" style="max-height:300px; overflow:auto;" hidden>
+        <img id="episodeImage" class="img-fluid" style="max-height:260px;">
+      </div>
+      <pre id="episodeScript" class="border rounded p-3 mb-2" style="max-height:300px; overflow:auto;"></pre>
+      <pre id="episodeTranscript" class="border rounded p-3" style="max-height:300px; overflow:auto;"></pre>
+    </section>
+    </div>
+    <h2 class="h4 mt-4">Toolbox</h2>
+    <section id="podcast-section">
+      <h2 class="h4">Podcast Script <small class="text-muted">(/stlcitysc/generate-script)</small></h2>
+      <!-- Article IDs input for generate-script endpoint -->
+      <div class="mb-2">
+        <label class="form-label">Article IDs (comma or space separated)</label>
+        <input id="scriptArticleId" type="text" class="form-control" placeholder="Enter Article IDs">
+      </div>
+      <div class="mb-2">
+        <label class="form-label">System Prompt</label>
+        <select id="scriptPromptSelect" class="form-select"></select>
+      </div>
+      <div class="mb-2">
+        <label class="form-label">Podcast Name</label>
+        <input id="podcastName" class="form-control" value="The City Minute Podcast">
+      </div>
+      <div class="mb-2">
+        <label class="form-label">Team Name</label>
+        <input id="teamName" class="form-control" value="Saint Louis City SC">
+      </div>
+      <div class="mb-2">
+        <label class="form-label">Tone</label>
+        <input id="tone" class="form-control" value="Fun, charismatic, professional sports podcaster">
+      </div>
+      <div class="mb-2" style="max-width:150px;">
+        <label class="form-label">Length (min)</label>
+        <input id="lengthMin" type="number" class="form-control" value="4">
+      </div>
+      <div class="mb-2" style="display: none;">
+        <label class="form-label">Season Context</label>
+        <textarea id="seasonContext" class="form-control" rows="4">St. Louis City SC’s 2025 MLS season has been defined by inconsistent results and tempered optimism. As of July 21, the team holds a record of 3 wins, 10 losses, and 6 draws, sitting near the bottom of the Western Conference. Notable highlights include a recent comeback 2-1 home win over the Portland Timbers—powered by Marcel Hartel’s brace—and a dramatic 3-3 draw against LA Galaxy, in which João Klauss scored the club’s first-ever MLS hat trick. While the team has earned points in four of its last five home matches, it continues to struggle overall, especially in attack and defensive stability.
+The mood among fans and commentators is largely frustrated and disappointed, pointing to missed chances, inconsistency, and a sense of underachievement compared to preseason hopes. There’s praise for standout players like Klauss and Hartel, but the prevailing sentiment is a call for improvement and deeper connection between club leadership and supporters.
+After missing out on Leagues Cup qualification and making only a moderate run in the U.S. Open Cup, St. Louis now looks to regroup for the remainder of the league season, hoping for stronger form and results at Energizer Park.</textarea>
+      </div>
+      <div class="mb-2">
+        <label class="form-label">Custom Intro</label>
+        <textarea id="customIntro" class="form-control" rows="2">Welcome back to your City Minute, the official podcast of St Louis City SC, I’m your host, Kevin, and my lovely cohost with me today is Abby!</textarea>
+      </div>
+      <div class="mb-2">
+        <label class="form-label">Custom Outro</label>
+        <input id="customOutro" class="form-control" value="All for City!">
+      </div>
+      <div class="mb-2" style="display: none;">
+        <label class="form-label">Prompt</label>
+        <textarea id="scriptPrompt" class="form-control" rows="8">
+St. Louis CITY SC earned a come-from-behind, 2-1 victory against Portland Timbers on Sunday night at Energizer Park. Despite dominating play early, St. Louis conceded the first goal of the match in the 19th minute. CITY SC rebounded just a few minutes into the second half, with Marcel Hartel roofing a strike to level the match. In the 67th minute, Hartel headed home a cross from Conrad Wallem to put CITY SC on top, earning his first career MLS brace. St. Louis is now a perfect 3-0-0 all-time in MLS home contests when Marcel Hartel finds the back of the net. CITY SC’s next match is a road showdown with FC Dallas on Saturday, July 19, at 7:30 p.m. CT at Toyota Stadium.
+Postgame Notes
+Marcel Hartel notched his first career MLS brace, bringing him to five total goals across all-competitions
+When Hartel scores at home during the MLS regular season, CITY SC has an all-time record of 3-0-0
+Hartel has six goal contributions (three goals, three assists) in four all-time matches against Portland Timbers across all competitions
+Conrad Wallem notched his first career MLS assist
+CITY SC has earned points in four of their last five home matches, going 2-1-2 (8 points) over that span
+July 13, 2025 – Energizer Park (St. Louis, MO)
+Goal-Scoring Plays
+POR: David Da Costa (Santiago Moreno), 19th minute – David Da Costa scored with a right footed shot from the central position outside the box to the bottom right corner
+STL: Marcel Hartel, 54th minute – Marcel Hartel with left footed shot from the center of the box to the top left corner.
+STL: Marcel Hartel (Conrad Wallem), 67th minute – Marcel Hartel scored with header from the center of the box to the top left corner.
+Scoring Summary
+POR: David Da Costa (Santiago Moreno), 19’
+STL: Marcel Hartel, 54’
+STL: Marcel Hartel (Conrad Wallem), 67’
+Misconduct Summary
+POR: Joao Ortiz (caution), 59’
+POR: Kevin Kelsy (caution), 64’
+POR: Juan Mosquera (caution), 77’
+POR: Kamal Miller (caution), 79’
+STL: João Klauss (caution), 90’+2
+STL: Jaziel Orozco (caution), 90’+3
+Lineups
+STL: GK Roman Bürki ©; D Tomas Totland, D Jake Girdwood-Reich, D Josh Yaro, D Jaziel Orozco (Kyle Hiebert, 90’+5), M Tomáš Ostrák (Eduard Löwen, 66’); M Conrad Wallem; M Cedric Teuchert (Akil Watts, 82’), M Marcel Hartel, M Célio Pompeu (Simon Becher, 67’); F João Klauss
+Substitutes not used: GK Ben Lundt, D Jay Reid, D Joey Zalinsky, M Tyson Pearce, M Xande Silva
+TOTAL SHOTS: 21; SHOTS ON GOAL: 8; FOULS: 9; OFFSIDES: 4; CORNER KICKS: 4; SAVES: 3
+POR: GK Maxime Crepeau; D Kamal Miller ©, D Dario Zuparic (Gage Guerra, 75’), D Finn Surman, D Juan Mosquera; M David Da Costa, M David Ayala (Cristhian Paredes, 75’), M Jimer Fory (Ian Smith, 46’), M Santiago Moreno (Omir Fernandez, 65’), M Joao Ortiz (Diego Chara, 65’); F Kevin Kelsy
+Substitutes not used: GK James Pantemis, F Felipe Mora, D Eric Miller
+TOTAL SHOTS: 10; SHOTS ON GOAL: 4; FOULS: 10; OFFSIDES: 0; CORNER KICKS: 3; SAVES: 6
+Referee: Ricardo Montero Araya
+Assistant Referees: Logan Brown, Jeffrey Swartzel, Rubiel Vazquez
+VAR: Jorge Gonzalez
+AVAR: Fabio Tovar
+Venue: Energizer Park
+        </textarea>
+      </div>
+      <button id="generateScriptBtn" class="btn btn-info mb-2">
+        <i class="bi bi-mic"></i> Generate Script
+      </button>
+      <pre id="podcastScript" class="border rounded p-3" style="max-height:300px; overflow:auto;"></pre>
+      <div class="mb-2">
+        <label class="form-label">Edit Instructions</label>
+        <textarea id="editInstructions" class="form-control" rows="2" placeholder="Describe changes..."></textarea>
+      </div>
+      <button id="editScriptBtn" class="btn btn-secondary mb-2">
+        <i class="bi bi-pencil"></i> Edit Script
+      </button>
+    </section>
+    <section id="audio-section">
+      <h2 class="h4">Audio Storage <small class="text-muted">(/audio-files)</small></h2>
+      <div class="input-group mb-3">
+        <input type="file" id="fileInput" class="form-control" accept=".mp3,.wav">
+        <button id="uploadBtn" class="btn btn-success">
+          <i class="bi bi-upload"></i> Upload
+        </button>
+        <button id="refreshFilesBtn" class="btn btn-secondary">
+          <i class="bi bi-arrow-clockwise"></i> Refresh
+        </button>
+      </div>
+      <ul id="fileList" class="list-group mb-3"></ul>
+      <audio id="audioPlayer" class="w-100" controls hidden></audio>
+    </section>
+    <section id="mix-section">
+      <h2 class="h4">Intro/Outro Mixer <small class="text-muted">(/intro-outro)</small></h2>
+      <div class="mb-2">
+        <label class="form-label">Intro File</label>
+        <input type="file" id="introFile" class="form-control" accept=".mp3,.wav">
+      </div>
+      <div class="mb-2">
+        <label class="form-label">Main Audio</label>
+        <input type="file" id="mainFile" class="form-control" accept=".mp3,.wav">
+      </div>
+      <div class="mb-2">
+        <label class="form-label">Outro File</label>
+        <input type="file" id="outroFile" class="form-control" accept=".mp3,.wav">
+      </div>
+      <button id="mixBtn" class="btn btn-info mb-2">
+        <i class="bi bi-music-note"></i> Combine
+      </button>
+      <audio id="mixPlayer" class="w-100" controls hidden></audio>
+    </section>
+    <section id="dialogue-section">
+      <h2 class="h4">Text to Speech <small class="text-muted">(/dialogue)</small></h2>
+
+      <div class="row g-2 mb-3">
+        <div class="col">
+          <label class="form-label">Speaker 1 Name</label>
+          <input id="speaker1Name" class="form-control" value="Speaker1">
+        </div>
+        <div class="col">
+          <label class="form-label">Speaker 1 Voice</label>
+          <select id="speaker1Voice" class="form-select">
+            <option>Zephyr</option>
+            <option>Puck</option>
+            <option>Charon</option>
+            <option>Kore</option>
+            <option>Fenrir</option>
+            <option>Leda</option>
+            <option>Orus</option>
+            <option>Aoede</option>
+            <option>Callirrhoe</option>
+            <option>Autonoe</option>
+            <option>Enceladus</option>
+            <option>Iapetus</option>
+            <option>Umbriel</option>
+            <option>Algieba</option>
+            <option>Despina</option>
+            <option>Erinome</option>
+            <option>Algenib</option>
+            <option>Rasalgethi</option>
+            <option>Laomedeia</option>
+            <option>Achernar</option>
+            <option>Alnilam</option>
+            <option>Schedar</option>
+            <option>Gacrux</option>
+            <option>Pulcherrima</option>
+            <option selected>Achird</option>
+            <option>Zubenelgenubi</option>
+            <option>Vindemiatrix</option>
+            <option>Sadachbia</option>
+            <option>Sadaltager</option>
+            <option>Sulafat</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row g-2 mb-3">
+        <div class="col">
+          <label class="form-label">Speaker 2 Name</label>
+          <input id="speaker2Name" class="form-control" value="Speaker2">
+        </div>
+        <div class="col">
+          <label class="form-label">Speaker 2 Voice</label>
+          <select id="speaker2Voice" class="form-select">
+            <option>Zephyr</option>
+            <option>Puck</option>
+            <option>Charon</option>
+            <option selected>Kore</option>
+            <option>Fenrir</option>
+            <option>Leda</option>
+            <option>Orus</option>
+            <option>Aoede</option>
+            <option>Callirrhoe</option>
+            <option>Autonoe</option>
+            <option>Enceladus</option>
+            <option>Iapetus</option>
+            <option>Umbriel</option>
+            <option>Algieba</option>
+            <option>Despina</option>
+            <option>Erinome</option>
+            <option>Algenib</option>
+            <option>Rasalgethi</option>
+            <option>Laomedeia</option>
+            <option>Achernar</option>
+            <option>Alnilam</option>
+            <option>Schedar</option>
+            <option>Gacrux</option>
+            <option>Pulcherrima</option>
+            <option>Achird</option>
+            <option>Zubenelgenubi</option>
+            <option>Vindemiatrix</option>
+            <option>Sadachbia</option>
+            <option>Sadaltager</option>
+            <option>Sulafat</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Voice Context</label>
+        <input id="voiceContext" class="form-control" value="Read aloud in a charismatic, fun, sports podcast tone.">
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Prompt</label>
+        <textarea id="ttsPrompt" class="form-control" rows="3" placeholder="Enter text to speak..."></textarea>
+      </div>
+
+      <button id="dlgBtn" class="btn btn-primary mb-2">
+        <i class="bi bi-play-circle"></i> Speak
+      </button>
+      <audio id="dlgPlayer" class="w-100" controls hidden></audio>
+    </section>
+    <section id="transcript-section">
+      <h2 class="h4">Transcript <small class="text-muted">(/transcripts/:fileName)</small></h2>
+      <div class="input-group mb-3">
+        <input id="transcriptFile" type="text" class="form-control" placeholder="audio file name">
+        <button id="getTranscriptBtn" class="btn btn-info">
+          <i class="bi bi-file-earmark-text"></i> Fetch Transcript
+        </button>
+      </div>
+      <div class="input-group mb-3">
+        <input id="localTranscriptFile" type="file" class="form-control" accept=".mp3,.wav">
+        <button id="uploadTranscriptBtn" class="btn btn-info">
+          <i class="bi bi-upload"></i> Transcribe File
+        </button>
+      </div>
+      <pre id="transcriptOut" class="border rounded p-3" style="max-height:300px; overflow:auto;"></pre>
+    </section>
+    <section id="thumbnail-section">
+      <h2 class="h4">Episode Thumbnail <small class="text-muted">(/thumbnail)</small></h2>
+      <textarea id="thumbPrompt" class="form-control mb-2" rows="2" placeholder="Image prompt"></textarea>
+      <textarea id="thumbScript" class="form-control mb-2" rows="4" placeholder="Paste podcast script to auto-create a prompt"></textarea>
+      <button id="generateThumbBtn" class="btn btn-info mb-2">
+        <i class="bi bi-image"></i> Generate Image
+      </button>
+      <button id="generateThumbFromScriptBtn" class="btn btn-secondary mb-2">
+        <i class="bi bi-magic"></i> From Script
+      </button>
+      <input id="thumbFileName" class="form-control mb-2" placeholder="File name (for update/delete)">
+      <div class="mb-2">
+        <button id="updateThumbBtn" class="btn btn-warning me-2">
+          <i class="bi bi-arrow-repeat"></i> Update
+        </button>
+        <button id="deleteThumbBtn" class="btn btn-danger me-2">
+          <i class="bi bi-trash"></i> Delete
+        </button>
+        <button id="listThumbsBtn" class="btn btn-secondary">
+          <i class="bi bi-list"></i> List
+        </button>
+      </div>
+      <pre id="thumbList" class="border rounded p-3 mb-2" style="max-height:200px; overflow:auto;"></pre>
+      <img id="thumbImage" class="img-fluid" style="max-height:300px;" hidden>
+    </section>
+    <section id="chat-section">
+      <h2 class="h4">ChatGPT <small class="text-muted">(/chat)</small></h2>
+      <textarea id="chatPrompt" class="form-control mb-2" rows="3" placeholder="Enter a prompt…"></textarea>
+      <div class="row g-2 mb-2">
+        <div class="col-auto">
+          <label class="form-label">Temp</label>
+          <input type="number" id="optTemp" class="form-control" min="0" max="1" step="0.1" value="0.7">
+        </div>
+        <div class="col-auto">
+          <label class="form-label">Max Tokens</label>
+          <input type="number" id="optMax" class="form-control" min="10" max="1000" value="300">
+        </div>
+      </div>
+      <button id="sendChatBtn" class="btn btn-primary mb-2">
+        <i class="bi bi-chat-dots"></i> Send
+      </button>
+      <pre id="chatReply" class="border rounded p-3" style="max-height:300px; overflow:auto;"></pre>
+    </section>
+      <section id="season-context-section">
+        <h2 class="h4">Season Context <small class="text-muted">(/season-context)</small></h2>
+        <div class="mb-2">
+          <button id="fetchSeasonContextBtn" class="btn btn-info mb-2">
+            <i class="bi bi-download"></i> Fetch Season Context
+          </button>
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Team Name</label>
+          <input id="seasonTeamName" class="form-control" value="Saint Louis City SC">
+        </div>
+        <div class="mb-2">
+          <button id="generateSeasonContextBtn" class="btn btn-warning mb-2">
+            <i class="bi bi-stars"></i> Refresh via Perplexity
+          </button>
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Season Context</label>
+          <textarea id="seasonContextTest" class="form-control" rows="5" placeholder="Season context will appear here..."></textarea>
+        </div>
+        <div class="mb-2">
+          <button id="updateSeasonContextBtn" class="btn btn-success mb-2">
+            <i class="bi bi-upload"></i> Update Season Context
+          </button>
+          <button id="deleteSeasonContextBtn" class="btn btn-danger mb-2">
+            <i class="bi bi-trash"></i> Delete Season Context
+          </button>
+        </div>
+        <div id="seasonContextStatus" class="text-success mb-2"></div>
+      </section>
+
+      <section id="system-prompts-section">
+        <h2 class="h4">System Prompts <small class="text-muted">(/system-prompts)</small></h2>
+        <div class="mb-2">
+          <label class="form-label">Prompt Name</label>
+          <input id="spName" class="form-control">
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Prompt Body</label>
+          <textarea id="spText" class="form-control" rows="5"></textarea>
+        </div>
+        <div class="mb-2">
+          <button id="newPromptBtn" class="btn btn-secondary me-2">
+            <i class="bi bi-file-earmark-plus"></i> New
+          </button>
+          <button id="savePromptBtn" class="btn btn-success">
+            <i class="bi bi-save"></i> Save
+          </button>
+        </div>
+        <div id="spStatus" class="text-success mb-2"></div>
+        <h5 class="mt-3">Existing Prompts</h5>
+        <ul id="promptList" class="list-group"></ul>
+      </section>
+
+      <section id="pronunciations-section">
+        <h2 class="h4">Pronunciations <small class="text-muted">(/pronunciations)</small></h2>
+        <div class="mb-2">
+          <button id="fetchPronBtn" class="btn btn-info mb-2">
+            <i class="bi bi-download"></i> Fetch Pronunciations
+          </button>
+        </div>
+        <div class="row g-2 mb-2">
+          <div class="col"><input id="pronTerm" class="form-control" placeholder="Term"></div>
+          <div class="col"><input id="pronPron" class="form-control" placeholder="Pronunciation"></div>
+          <div class="col-auto"><button id="savePronBtn" class="btn btn-success">Save</button></div>
+        </div>
+        <ul id="pronListServer" class="list-group mb-2"></ul>
+        <div id="pronStatus" class="text-success"></div>
+      </section>
+  </div>
+
+  <script>
+  (function(){
+    // Front-end logic for interacting with the API. The functions below
+    // correspond to the various endpoints exposed by the server.
+      // --- Season Context Test UI ---
+      const fetchSeasonContextBtn = document.getElementById('fetchSeasonContextBtn');
+      const generateSeasonContextBtn = document.getElementById('generateSeasonContextBtn');
+      const updateSeasonContextBtn = document.getElementById('updateSeasonContextBtn');
+      const deleteSeasonContextBtn = document.getElementById('deleteSeasonContextBtn');
+      const seasonContextTest = document.getElementById('seasonContextTest');
+      const seasonContextStatus = document.getElementById('seasonContextStatus');
+      const seasonTeamName = document.getElementById('seasonTeamName');
+      let seasonExists = false;
+
+      fetchSeasonContextBtn.onclick = async function() {
+        seasonContextStatus.textContent = '';
+        seasonContextTest.value = 'Loading…';
+        try {
+          const res = await fetch(`${apiBase()}/season-context`);
+          if (!res.ok) throw new Error(res.statusText);
+          const data = await res.json();
+          seasonContextTest.value = data.season_context || '';
+          seasonExists = !!data.season_context;
+        } catch (e) {
+          seasonContextTest.value = '';
+          seasonContextStatus.textContent = 'Error: ' + e.message;
+          seasonContextStatus.className = 'text-danger mb-2';
+        }
+      };
+
+      generateSeasonContextBtn.onclick = async function() {
+        seasonContextStatus.textContent = '';
+        const team = seasonTeamName.value.trim();
+        if (!team) {
+          seasonContextStatus.textContent = 'Enter team name.';
+          seasonContextStatus.className = 'text-danger mb-2';
+          return;
+        }
+        seasonContextStatus.textContent = 'Generating…';
+        seasonContextStatus.className = 'text-muted mb-2';
+        try {
+          const res = await fetch(`${apiBase()}/season-context/refresh`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ team_name: team })
+          });
+          if (!res.ok) throw new Error(res.statusText);
+          const data = await res.json();
+          seasonContextTest.value = data.season_context || '';
+          seasonExists = !!data.season_context;
+          seasonContextStatus.textContent = 'Season context generated!';
+          seasonContextStatus.className = 'text-success mb-2';
+        } catch (e) {
+          seasonContextStatus.textContent = 'Error: ' + e.message;
+          seasonContextStatus.className = 'text-danger mb-2';
+        }
+      };
+
+      updateSeasonContextBtn.onclick = async function() {
+        seasonContextStatus.textContent = '';
+        const newCtx = seasonContextTest.value.trim();
+        if (!newCtx) {
+          seasonContextStatus.textContent = 'Enter season context.';
+          seasonContextStatus.className = 'text-danger mb-2';
+          return;
+        }
+        try {
+          const method = seasonExists ? 'PUT' : 'POST';
+          const res = await fetch(`${apiBase()}/season-context`, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ season_context: newCtx })
+          });
+          if (!res.ok) throw new Error(res.statusText);
+          const data = await res.json();
+          if (data.success) {
+            seasonExists = true;
+            seasonContextStatus.textContent = 'Season context saved!';
+            seasonContextStatus.className = 'text-success mb-2';
+          } else {
+            seasonContextStatus.textContent = 'Update failed.';
+            seasonContextStatus.className = 'text-danger mb-2';
+          }
+        } catch (e) {
+          seasonContextStatus.textContent = 'Error: ' + e.message;
+          seasonContextStatus.className = 'text-danger mb-2';
+        }
+      };
+
+      deleteSeasonContextBtn.onclick = async function() {
+        seasonContextStatus.textContent = '';
+        try {
+          const res = await fetch(`${apiBase()}/season-context`, { method: 'DELETE' });
+          if (!res.ok) throw new Error(res.statusText);
+          const data = await res.json();
+          if (data.success) {
+            seasonContextTest.value = '';
+            seasonExists = false;
+            seasonContextStatus.textContent = 'Season context deleted.';
+            seasonContextStatus.className = 'text-success mb-2';
+          } else {
+            seasonContextStatus.textContent = 'Delete failed.';
+            seasonContextStatus.className = 'text-danger mb-2';
+          }
+        } catch (e) {
+          seasonContextStatus.textContent = 'Error: ' + e.message;
+          seasonContextStatus.className = 'text-danger mb-2';
+        }
+      };
+
+      // --- System Prompts UI ---
+      const promptList = document.getElementById('promptList');
+      const spName = document.getElementById('spName');
+      const spText = document.getElementById('spText');
+      const spStatus = document.getElementById('spStatus');
+      const savePromptBtn = document.getElementById('savePromptBtn');
+      const newPromptBtn = document.getElementById('newPromptBtn');
+      let prompts = [];
+      let currentPromptId = null;
+
+      async function loadPrompts() {
+        try {
+          const res = await fetch(`${apiBase()}/system-prompts`);
+          const data = await res.json();
+          prompts = data.prompts || [];
+          promptList.innerHTML = prompts.map(p => `
+            <li class="list-group-item d-flex justify-content-between">
+              <span>${p.name}</span>
+              <div>
+                <button class="btn btn-sm btn-primary me-2" data-edit="${p.id}"><i class="bi bi-pencil"></i></button>
+                <button class="btn btn-sm btn-danger" data-del="${p.id}"><i class="bi bi-trash"></i></button>
+              </div>
+            </li>`).join('');
+          const options = prompts.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+          const scriptSel = document.getElementById('scriptPromptSelect');
+          const epSel = document.getElementById('epPromptSelect');
+          if (scriptSel) scriptSel.innerHTML = options;
+          if (epSel) epSel.innerHTML = options;
+        } catch (e) {
+          promptList.innerHTML = '<li class="list-group-item text-danger">Error loading</li>';
+        }
+      }
+
+      newPromptBtn.onclick = () => {
+        currentPromptId = null;
+        spName.value = '';
+        spText.value = '';
+        spStatus.textContent = '';
+      };
+
+      savePromptBtn.onclick = withLoading(savePromptBtn, async () => {
+        const name = spName.value.trim();
+        const prompt = spText.value.trim();
+        if (!name || !prompt) {
+          spStatus.textContent = 'Enter name and prompt.';
+          spStatus.className = 'text-danger mb-2';
+          return;
+        }
+        const method = currentPromptId ? 'PUT' : 'POST';
+        const url = currentPromptId ? `${apiBase()}/system-prompts/${currentPromptId}` : `${apiBase()}/system-prompts`;
+        try {
+          const res = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, prompt })
+          });
+          if (!res.ok) throw new Error(res.statusText);
+          currentPromptId = null;
+          spName.value = '';
+          spText.value = '';
+          spStatus.textContent = 'Saved!';
+          spStatus.className = 'text-success mb-2';
+          await loadPrompts();
+        } catch (e) {
+          spStatus.textContent = 'Error: ' + e.message;
+          spStatus.className = 'text-danger mb-2';
+        }
+      });
+
+      promptList.onclick = async e => {
+        const editId = e.target.closest('[data-edit]')?.dataset.edit;
+        const delId = e.target.closest('[data-del]')?.dataset.del;
+        if (editId) {
+          const p = prompts.find(x => x.id === editId);
+          if (p) {
+            currentPromptId = p.id;
+            spName.value = p.name;
+            spText.value = p.prompt;
+            spStatus.textContent = '';
+          }
+        }
+        if (delId && confirm('Delete this prompt?')) {
+          const btn = e.target.closest('button');
+          await withLoading(btn, async () => {
+            const res = await fetch(`${apiBase()}/system-prompts/${delId}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error(res.statusText);
+            if (currentPromptId === delId) {
+              currentPromptId = null;
+              spName.value = '';
+              spText.value = '';
+            }
+            await loadPrompts();
+          })().catch(err => {
+            spStatus.textContent = 'Error: ' + err.message;
+            spStatus.className = 'text-danger mb-2';
+          });
+        }
+      };
+
+      document.addEventListener('DOMContentLoaded', loadPrompts);
+
+      // --- Pronunciations Test UI ---
+      const fetchPronBtn = document.getElementById('fetchPronBtn');
+      const savePronBtn = document.getElementById('savePronBtn');
+      const pronTerm = document.getElementById('pronTerm');
+      const pronPron = document.getElementById('pronPron');
+      const pronListServer = document.getElementById('pronListServer');
+      const pronStatus = document.getElementById('pronStatus');
+      let serverPronMap = {};
+
+      function renderServerPron(){
+        pronListServer.innerHTML = Object.entries(serverPronMap).map(([k,v]) => `
+          <li class="list-group-item d-flex justify-content-between">
+            <span>${k} → ${v}</span>
+            <button class="btn btn-sm btn-danger" data-del="${k}">x</button>
+          </li>`).join('');
+      }
+
+      if (fetchPronBtn) fetchPronBtn.onclick = withLoading(fetchPronBtn, async () => {
+        pronStatus.textContent = '';
+        try {
+          const res = await fetch(`${apiBase()}/pronunciations`);
+          if (!res.ok) throw new Error(res.statusText);
+          const data = await res.json();
+          serverPronMap = data.pronunciations || {};
+          renderServerPron();
+        } catch (e) {
+          pronStatus.textContent = 'Error: ' + e.message;
+          pronStatus.className = 'text-danger mb-2';
+        }
+      });
+
+      if (savePronBtn) savePronBtn.onclick = withLoading(savePronBtn, async () => {
+        const term = pronTerm.value.trim();
+        const pronunciation = pronPron.value.trim();
+        if (!term || !pronunciation) {
+          pronStatus.textContent = 'Enter term and pronunciation.';
+          pronStatus.className = 'text-danger mb-2';
+          return;
+        }
+        pronStatus.textContent = '';
+        try {
+          const method = serverPronMap[term] ? 'PUT' : 'POST';
+          const res = await fetch(`${apiBase()}/pronunciations`, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ term, pronunciation })
+          });
+          if (!res.ok) throw new Error(res.statusText);
+          const data = await res.json();
+          if (data.success) {
+            serverPronMap[term] = pronunciation;
+            renderServerPron();
+            pronTerm.value = '';
+            pronPron.value = '';
+            pronStatus.textContent = 'Saved!';
+            pronStatus.className = 'text-success mb-2';
+          } else {
+            pronStatus.textContent = 'Failed.';
+            pronStatus.className = 'text-danger mb-2';
+          }
+        } catch (e) {
+          pronStatus.textContent = 'Error: ' + e.message;
+          pronStatus.className = 'text-danger mb-2';
+        }
+      });
+
+      pronListServer?.addEventListener('click', async e => {
+        const term = e.target.closest('[data-del]')?.dataset.del;
+        if (!term) return;
+        if (!confirm(`Delete "${term}"?`)) return;
+        const btn = e.target.closest('button');
+        await withLoading(btn, async () => {
+          const res = await fetch(`${apiBase()}/pronunciations/${encodeURIComponent(term)}`, { method: 'DELETE' });
+          if (!res.ok) throw new Error(res.statusText);
+          delete serverPronMap[term];
+          renderServerPron();
+        })().catch(err => alert('Delete failed: ' + err.message));
+      });
+const apiInput = document.getElementById('apiBase');
+const apiBase = () => apiInput.value.replace(/\/+$/, '');
+
+// Utility to show a spinner on a button while an async task runs
+function withLoading(btn, fn) {
+  return async function(...args) {
+    const spinner = document.createElement('span');
+    spinner.className = 'spinner-border spinner-border-sm ms-2';
+    btn.disabled = true;
+    btn.appendChild(spinner);
+    try {
+      return await fn.apply(this, args);
+    } finally {
+      btn.disabled = false;
+      spinner.remove();
+    }
+  };
+}
+
+    // — Audio Files Handlers —
+    // Fetch the list of uploaded audio files and render buttons
+    async function refreshFiles(){
+      const list = document.getElementById('fileList');
+      list.innerHTML = '<li class="list-group-item">Loading…</li>';
+      try {
+        const res = await fetch(`${apiBase()}/audio-files`);
+        const files = await res.json();
+        if (!files.length) {
+          list.innerHTML = '<li class="list-group-item">No files.</li>';
+          return;
+        }
+        list.innerHTML = files.map(f => `
+          <li class="list-group-item d-flex justify-content-between align-items-center">
+            <span>${f.fileName}</span>
+            <div>
+              <button class="btn btn-sm btn-primary me-2" data-play="${f.fileName}">
+                <i class="bi bi-play-fill"></i>
+              </button>
+              <button class="btn btn-sm btn-danger" data-delete="${f.fileName}">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </li>
+        `).join('');
+      } catch(e){
+        list.innerHTML = `<li class="list-group-item text-danger">Error loading</li>`;
+      }
+    }
+
+    document.getElementById('uploadBtn').onclick = withLoading(document.getElementById('uploadBtn'), async () => {
+      const inp = document.getElementById('fileInput');
+      if (!inp.files.length) return alert('Select a file');
+      const file = inp.files[0];
+      const form = new FormData();
+      form.append('file', file);
+      try {
+        const res = await fetch(`${apiBase()}/audio-files`, {
+          method: 'POST',
+          body: form
+        });
+        if (!res.ok) throw new Error(res.statusText);
+        inp.value = '';
+        await refreshFiles();
+      } catch(e){
+        alert('Upload failed: ' + e.message);
+      }
+    });
+
+    document.getElementById('refreshFilesBtn').onclick = withLoading(document.getElementById('refreshFilesBtn'), refreshFiles);
+
+    document.getElementById('fileList').onclick = async e => {
+      const play = e.target.closest('[data-play]')?.dataset.play;
+      const del  = e.target.closest('[data-delete]')?.dataset.delete;
+      if (play) {
+        const p = document.getElementById('audioPlayer');
+        p.src = `${apiBase()}/audio-files/${encodeURIComponent(play)}`;
+        p.hidden = false;
+        p.play();
+      }
+      if (del && confirm(`Delete "${del}"?`)) {
+        const btn = e.target.closest('button');
+        await withLoading(btn, async () => {
+          const res = await fetch(`${apiBase()}/audio-files/${encodeURIComponent(del)}`, {
+            method: 'DELETE'
+          });
+          if (!res.ok) throw new Error(res.statusText);
+          document.getElementById('audioPlayer').hidden = true;
+          await refreshFiles();
+        })().catch(err => alert('Delete failed: ' + err.message));
+      }
+    };
+
+    // — Text to Speech Logic —
+    // Sends the prompt and selected voices to the /dialogue endpoint
+      const pronunciationMap = {};
+      const pronKey  = document.getElementById('pronounceKey');
+      const pronVal  = document.getElementById('pronounceVal');
+      const pronList = document.getElementById('pronounceList');
+      const addPronBtn = document.getElementById('addPronounceBtn');
+
+      function renderPronList() {
+        if (!pronList) return;
+        pronList.innerHTML = Object.entries(pronunciationMap)
+          .map(([k,v]) => `<li class="list-group-item d-flex justify-content-between"><span>${k} → ${v}</span><button class="btn btn-sm btn-danger" data-del="${k}">x</button></li>`)
+          .join('');
+      }
+
+      if (pronKey && pronVal && pronList && addPronBtn) {
+        addPronBtn.onclick = () => {
+          const k = pronKey.value.trim();
+          const v = pronVal.value.trim();
+          if (!k || !v) return;
+          pronunciationMap[k] = v;
+          pronKey.value = '';
+          pronVal.value = '';
+          renderPronList();
+        };
+
+        pronList.onclick = e => {
+          const del = e.target.closest('[data-del]')?.dataset.del;
+          if (del) { delete pronunciationMap[del]; renderPronList(); }
+        };
+      }
+
+      const dlgBtnEl = document.getElementById('dlgBtn');
+      dlgBtnEl.addEventListener('click', withLoading(dlgBtnEl, async () => {
+        let prompt   = document.getElementById('ttsPrompt').value.trim();
+        for (const [k,v] of Object.entries(pronunciationMap)) {
+          prompt = prompt.split(k).join(v);
+        }
+        const s1Name   = document.getElementById('speaker1Name').value.trim();
+        const s1Voice  = document.getElementById('speaker1Voice').value;
+        const s2Name   = document.getElementById('speaker2Name').value.trim();
+        const s2Voice  = document.getElementById('speaker2Voice').value;
+        if (!prompt) return alert('Enter a prompt');
+
+        try {
+          const res = await fetch(`${apiBase()}/dialogue`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              prompt,
+              speaker1Name: s1Name,
+              speaker1Voice: s1Voice,
+              speaker2Name: s2Name,
+              speaker2Voice: s2Voice,
+              voiceContext: document.getElementById('voiceContext').value
+            })
+          });
+        if (!res.ok) throw new Error(res.statusText);
+
+        const blob = await res.blob();
+        const player = document.getElementById('dlgPlayer');
+        player.src = URL.createObjectURL(blob);
+        player.hidden = false;
+        player.play();
+      } catch (e) {
+        alert('TTS failed: ' + e.message);
+      }
+    }));
+
+    // — Latest Post —
+    // Fetches the most recent STL City SC post via the proxy
+    const fetchLatestBtn = document.getElementById('fetchLatestBtn');
+    fetchLatestBtn.onclick = withLoading(fetchLatestBtn, async () => {
+      const out = document.getElementById('latestPost');
+      out.innerHTML = '<div>Loading…</div>';
+      const pages = parseInt(document.getElementById('latestPages').value, 10) || 1;
+      try {
+        const res = await fetch(`${apiBase()}/stlcitysc/latest-post?pages=${pages}`);
+        if (!res.ok) throw new Error(res.statusText);
+        const data = await res.json();
+        let posts = [];
+        if (Array.isArray(data)) posts = data;
+        else if (Array.isArray(data.items)) posts = data.items;
+        else if (Array.isArray(data.posts)) posts = data.posts;
+        else if (Array.isArray(data.docs)) posts = data.docs;
+        else if (Array.isArray(data.data)) posts = data.data;
+        out.innerHTML = posts.map(p => {
+          const date = p.publish_date_iso || p.updated_date_iso || '';
+          return `
+            <div class="col-12">
+              <div class="card">
+                <div class="card-body">
+                  <div class="form-check">
+                    <input class="form-check-input ep-article-check" type="checkbox" value="${p.id}" id="chk-${p.id}">
+                    <label class="form-check-label" for="chk-${p.id}">
+                      <strong>${p.full_title || p.title || ''}</strong>
+                      <span class="badge bg-secondary ms-2">${p.type}</span>
+                      <small class="text-muted ms-2">${date}</small>
+                    </label>
+                  </div>
+                  <pre class="mt-2 small">${(p.body || '').toString().substring(0,1000)}</pre>
+                </div>
+              </div>
+            </div>`;
+        }).join('');
+        out.onchange = () => {
+          const ids = Array.from(out.querySelectorAll('.ep-article-check:checked')).map(c => c.value);
+          const joined = ids.join(',');
+          document.getElementById('epArticleId').value = joined;
+          // also populate scriptArticleId for podcast script
+          const scriptInput = document.getElementById('scriptArticleId');
+          if (scriptInput) scriptInput.value = joined;
+        };
+      } catch (e) {
+        out.innerHTML = `<div class="text-danger">Error: ${e.message}</div>`;
+      }
+    });
+
+    // — Podcast Script —
+    // Generates a short script using the stored prompt
+      const genScriptBtn = document.getElementById('generateScriptBtn');
+      genScriptBtn.onclick = withLoading(genScriptBtn, async () => {
+        const out = document.getElementById('podcastScript');
+        out.textContent = 'Loading…';
+        // Get Article IDs
+        const idVal = document.getElementById('scriptArticleId').value.trim();
+        const ids = idVal.split(/[,\s]+/).filter(Boolean);
+        if (!ids.length) {
+          out.textContent = 'Error: Enter an Article ID';
+          return;
+        }
+        const payload = {
+          articleIds: ids,
+          podcast_name: document.getElementById('podcastName').value,
+          team_name: document.getElementById('teamName').value,
+          season_context: document.getElementById('seasonContext').value,
+          tone: document.getElementById('tone').value,
+          length_min: document.getElementById('lengthMin').value,
+          custom_intro: document.getElementById('customIntro').value,
+          custom_outro: document.getElementById('customOutro').value,
+          promptId: document.getElementById('scriptPromptSelect').value
+        };
+        try {
+          const res = await fetch(`${apiBase()}/stlcitysc/generate-script`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          if (!res.ok) throw new Error(res.statusText);
+          const data = await res.json();
+          out.textContent = data.script || JSON.stringify(data, null, 2);
+        } catch (e) {
+          out.textContent = 'Error: ' + e.message;
+        }
+      });
+
+      const editScriptBtn = document.getElementById('editScriptBtn');
+      editScriptBtn.onclick = withLoading(editScriptBtn, async () => {
+        const out = document.getElementById('podcastScript');
+        const instructions = document.getElementById('editInstructions').value.trim();
+        if (!out.textContent.trim()) {
+          out.textContent = 'Error: Generate a script first.';
+          return;
+        }
+        if (!instructions) {
+          out.textContent = 'Error: Enter edit instructions.';
+          return;
+        }
+        try {
+          const res = await fetch(`${apiBase()}/stlcitysc/edit-script`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ script: out.textContent, instructions })
+          });
+          if (!res.ok) throw new Error(res.statusText);
+          const data = await res.json();
+          out.textContent = data.script || out.textContent;
+        } catch (e) {
+          out.textContent = 'Error: ' + e.message;
+        }
+      });
+
+      // — Episode Generation —
+      // Create full episode audio, script, and transcript
+      const genEpBtn = document.getElementById('generateEpisodeBtn');
+      genEpBtn.onclick = withLoading(genEpBtn, async () => {
+        const scriptOut = document.getElementById('episodeScript');
+        const transcriptOut = document.getElementById('episodeTranscript');
+        const player = document.getElementById('episodePlayer');
+        const img = document.getElementById('episodeImage');
+        const thumb = document.getElementById('episodeThumb');
+        const progress = document.getElementById('episodeProgress');
+        scriptOut.textContent = 'Loading…';
+        transcriptOut.textContent = '';
+        player.hidden = true;
+        thumb.hidden = true;
+        const idVal = document.getElementById('epArticleId').value.trim();
+        const ids = idVal.split(/[,\s]+/).filter(Boolean);
+        if (!ids.length) {
+          scriptOut.textContent = 'Error: Enter an article ID';
+          return;
+        }
+        const payload = {
+          articleIds: ids,
+          host_a: document.getElementById('epHostAName').value,
+          host_b: document.getElementById('epHostBName').value,
+          voice_a: document.getElementById('epHostAVoice').value,
+          voice_b: document.getElementById('epHostBVoice').value,
+          prompt_tweak: document.getElementById('epPromptTweak').value,
+          voice_context: document.getElementById('epVoiceContext').value,
+          promptId: document.getElementById('epPromptSelect').value
+        };
+        progress.style.display = 'block';
+        try {
+          const res = await fetch(`${apiBase()}/stlcitysc/generate-episode`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          if (!res.ok) throw new Error(res.statusText);
+          const data = await res.json();
+          scriptOut.textContent = data.script || '';
+          if (data.audioUrl) {
+            player.src = data.audioUrl;
+            player.hidden = false;
+            player.play();
+          } else if (data.audio) {
+            player.src = `data:audio/wav;base64,${data.audio}`;
+            player.hidden = false;
+            player.play();
+          }
+          if (data.imageUrl) {
+            img.src = data.imageUrl;
+            thumb.hidden = false;
+          } else if (data.image) {
+            img.src = `data:image/png;base64,${data.image}`;
+            thumb.hidden = false;
+          }
+          if (data.transcript)
+            transcriptOut.textContent = JSON.stringify(data.transcript, null, 2);
+        } catch (e) {
+          scriptOut.textContent = 'Error: ' + e.message;
+        } finally {
+          progress.style.display = 'none';
+        }
+      });
+
+      // — Transcript Fetch —
+      // Retrieve an existing transcript for the given file name
+      const getTranscriptBtn = document.getElementById('getTranscriptBtn');
+      getTranscriptBtn.onclick = withLoading(getTranscriptBtn, async () => {
+        const name = document.getElementById('transcriptFile').value.trim();
+        if (!name) return alert('Enter a file name');
+        const out = document.getElementById('transcriptOut');
+        out.textContent = 'Loading…';
+        try {
+          const res = await fetch(`${apiBase()}/transcripts/${encodeURIComponent(name)}`);
+          if (!res.ok) throw new Error(res.statusText);
+          const data = await res.json();
+          out.textContent = JSON.stringify(data, null, 2);
+        } catch (e) {
+          out.textContent = 'Error: ' + e.message;
+        }
+      });
+
+      // Upload a local file and request a new transcript
+      const uploadTranscriptBtn = document.getElementById('uploadTranscriptBtn');
+      uploadTranscriptBtn.onclick = withLoading(uploadTranscriptBtn, async () => {
+        const inp = document.getElementById('localTranscriptFile');
+        if (!inp.files.length) return alert('Select a file');
+        const file = inp.files[0];
+        const form = new FormData();
+        form.append('file', file);
+        const out = document.getElementById('transcriptOut');
+        out.textContent = 'Loading…';
+        try {
+          const res = await fetch(`${apiBase()}/transcripts`, {
+            method: 'POST',
+            body: form
+          });
+          if (!res.ok) throw new Error(res.statusText);
+          const data = await res.json();
+          out.textContent = JSON.stringify(data, null, 2);
+        } catch (e) {
+          out.textContent = 'Error: ' + e.message;
+        }
+      });
+
+      // — Intro/Outro Mixer —
+      const mixBtn = document.getElementById('mixBtn');
+      mixBtn.onclick = withLoading(mixBtn, async () => {
+        const intro = document.getElementById('introFile').files[0];
+        const main  = document.getElementById('mainFile').files[0];
+        const outro = document.getElementById('outroFile').files[0];
+        if (!intro || !main || !outro) return alert('Select all files');
+        const form = new FormData();
+        form.append('intro', intro);
+        form.append('audio', main);
+        form.append('outro', outro);
+        const player = document.getElementById('mixPlayer');
+        try {
+          const res = await fetch(`${apiBase()}/intro-outro`, { method: 'POST', body: form });
+          if (!res.ok) throw new Error(res.statusText);
+          const blob = await res.blob();
+          player.src = URL.createObjectURL(blob);
+          player.hidden = false;
+          player.play();
+        } catch (e) {
+          alert('Mix failed: ' + e.message);
+        }
+      });
+
+      // — Thumbnail Generator —
+      const genThumbBtn = document.getElementById('generateThumbBtn');
+      genThumbBtn.onclick = withLoading(genThumbBtn, async () => {
+        const prompt = document.getElementById('thumbPrompt').value.trim();
+        if (!prompt) return alert('Enter a prompt');
+        const img = document.getElementById('thumbImage');
+        img.hidden = true;
+        try {
+          const res = await fetch(`${apiBase()}/thumbnail`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt })
+          });
+          if (!res.ok) throw new Error(res.statusText);
+          const data = await res.json();
+          img.src = data.url;
+          img.hidden = false;
+        } catch (e) {
+          alert('Image generation failed: ' + e.message);
+        }
+      });
+
+      const genThumbFromScriptBtn = document.getElementById('generateThumbFromScriptBtn');
+      genThumbFromScriptBtn.onclick = withLoading(genThumbFromScriptBtn, async () => {
+        const script = document.getElementById('thumbScript').value.trim();
+        if (!script) return alert('Paste a script');
+        const img = document.getElementById('thumbImage');
+        img.hidden = true;
+        try {
+          const res = await fetch(`${apiBase()}/thumbnail-from-script`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ script })
+          });
+          if (!res.ok) throw new Error(res.statusText);
+          const data = await res.json();
+          img.src = data.url;
+          img.hidden = false;
+        } catch (e) {
+          alert('Image generation failed: ' + e.message);
+        }
+      });
+
+      const listThumbsBtn = document.getElementById('listThumbsBtn');
+      listThumbsBtn.onclick = withLoading(listThumbsBtn, async () => {
+        try {
+          const res = await fetch(`${apiBase()}/thumbnails`);
+          if (!res.ok) throw new Error(res.statusText);
+          const data = await res.json();
+          document.getElementById('thumbList').textContent = data.files.join('\n');
+        } catch (e) {
+          alert('List failed: ' + e.message);
+        }
+      });
+
+      const deleteThumbBtn = document.getElementById('deleteThumbBtn');
+      deleteThumbBtn.onclick = withLoading(deleteThumbBtn, async () => {
+        const name = document.getElementById('thumbFileName').value.trim();
+        if (!name) return alert('Enter file name');
+        try {
+          const res = await fetch(`${apiBase()}/thumbnail/${encodeURIComponent(name)}`, { method: 'DELETE' });
+          if (!res.ok) throw new Error(res.statusText);
+          alert('Deleted');
+        } catch (e) {
+          alert('Delete failed: ' + e.message);
+        }
+      });
+
+      const updateThumbBtn = document.getElementById('updateThumbBtn');
+      updateThumbBtn.onclick = withLoading(updateThumbBtn, async () => {
+        const name = document.getElementById('thumbFileName').value.trim();
+        const prompt = document.getElementById('thumbPrompt').value.trim();
+        if (!name || !prompt) return alert('Enter file name and prompt');
+        const img = document.getElementById('thumbImage');
+        img.hidden = true;
+        try {
+          const res = await fetch(`${apiBase()}/thumbnail/${encodeURIComponent(name)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt })
+          });
+          if (!res.ok) throw new Error(res.statusText);
+          const data = await res.json();
+          img.src = data.url;
+          img.hidden = false;
+        } catch (e) {
+          alert('Update failed: ' + e.message);
+        }
+      });
+
+    // — ChatGPT —
+    // Send a free-form prompt to the /chat endpoint
+    const sendChatBtn = document.getElementById('sendChatBtn');
+    sendChatBtn.onclick = withLoading(sendChatBtn, async () => {
+      const prompt = document.getElementById('chatPrompt').value.trim();
+      if (!prompt) return alert('Enter a prompt');
+      const temp = parseFloat(document.getElementById('optTemp').value);
+      const maxT = parseInt(document.getElementById('optMax').value, 10);
+      const out  = document.getElementById('chatReply');
+      out.textContent = 'Thinking…';
+      try {
+        const res = await fetch(`${apiBase()}/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt,
+            options: { temperature: temp, max_tokens: maxT }
+          })
+        });
+        if (!res.ok) throw new Error(res.statusText);
+        const data = await res.json();
+        out.textContent = data.reply;
+      } catch (e) {
+        out.textContent = 'Error: ' + e.message;
+      }
+    });
+
+    // initial load - display any existing audio files
+    document.addEventListener('DOMContentLoaded', refreshFiles);
+      // Optionally, auto-fetch season context on load
+      document.addEventListener('DOMContentLoaded', () => {
+        if (fetchSeasonContextBtn) fetchSeasonContextBtn.click();
+        if (fetchPronBtn) fetchPronBtn.click();
+      });
+  })();
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
