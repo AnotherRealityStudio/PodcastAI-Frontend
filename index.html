@@ -30,9 +30,37 @@
   <div class="container my-4">
     <h1 class="text-center mb-4">STL City SC Tools</h1>
 
+    <div class="postman-run-button"
+      data-postman-action="collection/fork"
+      data-postman-visibility="public"
+      data-postman-var-1="19513400-307dde5f-c494-472e-a23e-bb2f2953753d"
+      data-postman-collection-url="entityId=19513400-307dde5f-c494-472e-a23e-bb2f2953753d&entityType=collection&workspaceId=c5e525a1-433e-4939-9fd4-f1b6a0218f2b"></div>
+    <script type="text/javascript">
+      (function (p,o,s,t,m,a,n) {
+        !p[s] && (p[s] = function () { (p[t] || (p[t] = [])).push(arguments); });
+        !o.getElementById(s+t) && o.getElementsByTagName("head")[0].appendChild((
+          (n = o.createElement("script")),
+          (n.id = s+t), (n.async = 1), (n.src = m), n
+        ));
+      }(window, document, "_pm", "PostmanRunObject", "https://run.pstmn.io/button.js"));
+    </script>
+
     <div class="mb-4">
       <label for="apiBase" class="form-label">API Base URL</label>
       <input id="apiBase" type="text" class="form-control" value="https://arstesting.onrender.com">
+    </div>
+
+    <div class="mb-4">
+      <label for="openaiKey" class="form-label">OpenAI API Key</label>
+      <input id="openaiKey" type="password" class="form-control" placeholder="sk-...">
+    </div>
+    <div class="mb-4">
+      <label for="geminiKey" class="form-label">Gemini API Key</label>
+      <input id="geminiKey" type="password" class="form-control" placeholder="Enter Gemini key">
+    </div>
+    <div class="mb-4">
+      <label for="perplexityKey" class="form-label">Perplexity API Key</label>
+      <input id="perplexityKey" type="password" class="form-control" placeholder="Enter Perplexity key">
     </div>
 
     <div id="episodeWrapper" class="p-3 mb-4 border border-info rounded" style="background:#e8f8ff;">
@@ -449,6 +477,31 @@ Venue: Energizer Park
       </button>
       <pre id="chatReply" class="border rounded p-3" style="max-height:300px; overflow:auto;"></pre>
     </section>
+
+    <section id="cost-estimator-section">
+      <h2 class="h4">GPT Cost Estimator</h2>
+      <div class="row g-2 mb-2">
+        <div class="col-md-4">
+          <label class="form-label">Model</label>
+          <select id="costModel" class="form-select">
+            <option value="gpt-4o">gpt-4o</option>
+            <option value="gpt-4o-mini">gpt-4o-mini</option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Input Tokens</label>
+          <input type="number" id="costInputTokens" class="form-control" min="0" value="0">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Output Tokens</label>
+          <input type="number" id="costOutputTokens" class="form-control" min="0" value="0">
+        </div>
+      </div>
+      <button id="estimateCostBtn" class="btn btn-secondary mb-2">Estimate Cost</button>
+      <div id="costEstimate" class="mb-2"></div>
+      <p class="small text-muted">Estimates are approximate. See <a href="https://platform.openai.com/docs/pricing?latest-pricing=standard" target="_blank">OpenAI pricing</a> for current rates.</p>
+    </section>
+
       <section id="season-context-section">
         <h2 class="h4">Season Context <small class="text-muted">(/season-context)</small></h2>
         <div class="mb-2">
@@ -810,7 +863,24 @@ Venue: Energizer Park
         })().catch(err => alert('Delete failed: ' + err.message));
       });
 const apiInput = document.getElementById('apiBase');
+const openaiInput = document.getElementById('openaiKey');
+const geminiInput = document.getElementById('geminiKey');
+const perplexityInput = document.getElementById('perplexityKey');
 const apiBase = () => apiInput.value.replace(/\/+$/, '');
+
+function authHeaders() {
+  const headers = {};
+  if (openaiInput.value) headers['x-openai-key'] = openaiInput.value.trim();
+  if (geminiInput.value) headers['x-gemini-key'] = geminiInput.value.trim();
+  if (perplexityInput.value) headers['x-perplexity-key'] = perplexityInput.value.trim();
+  return headers;
+}
+
+const originalFetch = window.fetch;
+window.fetch = (input, init = {}) => {
+  init.headers = { ...(init.headers || {}), ...authHeaders() };
+  return originalFetch(input, init);
+};
 
 // Utility to show a spinner on a button while an async task runs
 function withLoading(btn, fn) {
@@ -1330,6 +1400,27 @@ function withLoading(btn, fn) {
       }
     });
 
+    // — Cost Estimator —
+    const estimateBtn = document.getElementById('estimateCostBtn');
+    if (estimateBtn) {
+      const costOut = document.getElementById('costEstimate');
+      const modelSel = document.getElementById('costModel');
+      const inTok = document.getElementById('costInputTokens');
+      const outTok = document.getElementById('costOutputTokens');
+      const MODEL_RATES = {
+        'gpt-4o': { input: 0.005, output: 0.015 },
+        'gpt-4o-mini': { input: 0.00015, output: 0.0006 }
+      };
+      estimateBtn.onclick = () => {
+        const model = modelSel.value;
+        const rates = MODEL_RATES[model];
+        const tIn = parseInt(inTok.value, 10) || 0;
+        const tOut = parseInt(outTok.value, 10) || 0;
+        const cost = (tIn * rates.input + tOut * rates.output) / 1000;
+        costOut.textContent = `Estimated cost: $${cost.toFixed(4)}`;
+      };
+    }
+
     // initial load - display any existing audio files
     document.addEventListener('DOMContentLoaded', refreshFiles);
       // Optionally, auto-fetch season context on load
@@ -1340,5 +1431,164 @@ function withLoading(btn, fn) {
   })();
   </script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<section id="readme" class="mt-5">
+<h2 class="h4">Project README</h2>
+<div class="markdown">
+<h1>ARS Testing API</h1>
+
+<p>This project provides an Express based API for storing audio files, generating text-to-speech dialogue, interacting with ChatGPT, and producing STL City SC podcast episodes. A minimal front end for manual testing lives in <code>Frontend/index.html</code>.</p>
+
+<h2>Deployment Guide</h2>
+
+<h3>Prerequisites</h3>
+
+<ul>
+<li>Node.js 18 or later</li>
+<li>A PostgreSQL database (Render, Azure Database for PostgreSQL, etc.)</li>
+<li>Accounts/keys for external services:</li>
+</ul>
+<p>  - <code>OPENAI_API_KEY</code></p>
+<p>  - <code>GEMINI_API_KEY</code></p>
+<p>  - <code>STLCITYSC_TOKEN</code></p>
+<ul>
+<li>Optional persistent storage if the host filesystem is temporary.</li>
+</ul>
+
+<h3>Clone and configure</h3>
+
+<pre><code>
+git clone https://github.com/Knooblegooble/ARSTesting.git
+cd ARSTesting
+</code></pre>
+
+<p>Create a <code>.env</code> file in the project root:</p>
+
+<pre><code>
+PORT=3000
+DATABASE_URL=postgres://user:pass@host:5432/db
+SERVER_URL=https://your-domain
+OPENAI_API_KEY=sk-...
+GEMINI_API_KEY=...
+STLCITYSC_TOKEN=...
+</code></pre>
+
+<h3>Run locally</h3>
+
+<pre><code>
+npm install
+npm start
+</code></pre>
+
+<p>The server listens on the port specified by <code>PORT</code> (defaults to <code>3000</code>).</p>
+
+<h3>Deploy to Render</h3>
+
+<ol>
+<li>Create a PostgreSQL database on Render.</li>
+<li>Create a new Web Service from this repository or use the included <code>render.yaml</code> blueprint.</li>
+<li>In the service settings, add the environment variables shown above. For <code>DATABASE_URL</code>, use the internal connection string from the Render database.</li>
+<li>Set build command to <code>npm install</code> and start command to <code>npm start</code>.</li>
+<li>Add a persistent disk if you need to retain uploaded files.</li>
+</ol>
+
+<h3>Deploy to other platforms (e.g., Azure)</h3>
+
+<ol>
+<li>Provision a Node.js environment (Azure App Service, AWS Elastic Beanstalk, etc.).</li>
+<li>Provision a PostgreSQL database and note its connection string.</li>
+<li>Deploy the repository code to the environment (via Git, zip upload, or container).</li>
+<li>Configure the same environment variables as above.</li>
+<li>Install dependencies and start the app with <code>npm install</code> and <code>npm start</code> (or the platform's equivalent).</li>
+<li>Ensure the service has persistent storage for uploaded audio and images or modify the code to use cloud storage.</li>
+</ol>
+
+<h2>Endpoints</h2>
+
+<p>All routes are relative to the server base URL (e.g. <code>http://localhost:3000</code>).</p>
+
+<h3>Audio Storage</h3>
+
+<p><code>GET /audio-files</code></p>
+<p>: List uploaded files.</p>
+
+<p><code>POST /audio-files</code></p>
+<p>: Upload an <code>.mp3</code> or <code>.wav</code> file using <code>multipart/form-data</code> (<code>file</code> field). Returns <code>{ message: &amp;quot;Uploaded&amp;quot; }</code>.</p>
+
+<p><code>GET /audio-files/:fileName</code></p>
+<p>: Stream a stored file with HTTP range support.</p>
+
+<p><code>DELETE /audio-files/:fileName</code></p>
+<p>: Remove a stored file.</p>
+
+<h3>Text to Speech</h3>
+
+<p><code>POST /dialogue</code></p>
+<p>: Generate multi‑speaker audio from a prompt. Body fields:</p>
+<p>  - <code>prompt</code> – text to speak</p>
+<p>  - <code>speaker1Name</code>, <code>speaker1Voice</code></p>
+<p>  - <code>speaker2Name</code>, <code>speaker2Voice</code></p>
+<p>  - <code>voiceContext</code> – optional preamble describing how to read the text (defaults to &quot;Read aloud in a charismatic, fun, sports podcast tone.&quot;)</p>
+<p>  Returns raw audio (<code>audio/wav</code> or other type returned by Gemini).</p>
+
+<h3>ChatGPT Proxy</h3>
+
+<p><code>POST /chat</code></p>
+<p>: Forward a prompt to ChatGPT. Body:</p>
+<p>  <code></code>`json</p>
+<p>  { &quot;prompt&quot;: &quot;Hello&quot;, &quot;options&quot;: { &quot;temperature&quot;: 0.7, &quot;max_tokens&quot;: 300 } }</p>
+<p>  <code></code>`</p>
+<p>  Returns <code>{ &amp;quot;reply&amp;quot;: &amp;quot;...&amp;quot; }</code>.</p>
+
+<h3>STL City SC Podcast</h3>
+
+<p><code>GET /stlcitysc/latest-post</code></p>
+<p>: Fetch recent articles. Optional query <code>pages</code> controls how many pages of results to fetch.</p>
+
+<p><code>POST /stlcitysc/generate-script</code></p>
+<p>: Generate a podcast script from one or more articles. Provide <code>articleId</code> or <code>articleIds</code> along with optional customization fields such as <code>podcast_name</code>, <code>team_name</code>, <code>tone</code>, <code>length_min</code>, <code>season_context</code>, <code>custom_intro</code>, <code>custom_outro</code>, <code>announcements</code>, and <code>prompt_tweak</code>. Returns <code>{ &amp;quot;script&amp;quot;: &amp;quot;...&amp;quot; }</code>.</p>
+
+<p><code>POST /stlcitysc/generate-episode</code></p>
+<p>: Produce an episode in one‑shot. Accepts <code>articleId</code> or <code>articleIds</code> plus the same customization options as above along with host/voice selections. The optional <code>voice_context</code> field lets you adjust how Gemini reads the script (defaults to &quot;Read aloud in a charismatic, fun, sports podcast tone.&quot;). Returns <code>{ script, audio, audioUrl, transcript }</code> where <code>audio</code> is base64 encoded and <code>audioUrl</code> points to the stored file. The <code>transcript</code> object now includes this same <code>audioUrl</code> for convenience.</p>
+
+
+<h3>Thumbnails</h3>
+
+<p><code>POST /thumbnail</code></p>
+<p>: Generate a thumbnail image from a text prompt using the OpenAI <code>gpt-image-1</code> model. If that model is unavailable, the server automatically falls back to <code>dall-e-3</code>. Returns <code>{ url, base64 }</code> where <code>url</code> points to the stored file.</p>
+
+<p><code>POST /thumbnail-from-script</code></p>
+<p>: Generate a thumbnail image from a podcast script. Provide <code>{ &amp;quot;script&amp;quot;: &amp;quot;...&amp;quot; }</code> and the server will first ask ChatGPT to craft an image prompt using the script and the instruction &quot;Create an image prompt describing the podcast episode thumbnail for the above podcast. Include in the prompt the text shown on the thumbnail: &#x27;City Minute Podcast&#x27;&quot;. That prompt is then used with <code>gpt-image-1</code>, falling back to <code>dall-e-3</code> if needed, and the resulting image is stored locally and returned as <code>{ url, base64, prompt }</code>.</p>
+
+<p><code>GET /thumbnails</code></p>
+<p>: List all generated thumbnail file names.</p>
+
+<p><code>GET /thumbnail/:fileName</code></p>
+<p>: Retrieve a specific thumbnail&#x27;s data (<code>{ url, base64 }</code>).</p>
+
+<p><code>PUT /thumbnail/:fileName</code></p>
+<p>: Regenerate an existing thumbnail with a new prompt.</p>
+
+<p><code>DELETE /thumbnail/:fileName</code></p>
+<p>: Remove a stored thumbnail.</p>
+
+<h3>Transcripts</h3>
+
+<p><code>POST /transcripts</code></p>
+<p>: Transcribe an uploaded audio file (<code>file</code> field) using OpenAI Whisper. Returns a structured JSON transcript.</p>
+
+<p><code>GET /transcripts/:fileName</code></p>
+<p>: Retrieve (or create on demand) the transcript for a previously uploaded file.</p>
+
+<h2>Postman Collection</h2>
+
+<p>A ready‑to‑use Postman collection is provided in <code>postman_collection.json</code>. Import this file into Postman and set the collection variable <code>baseUrl</code> to the address where the server is running. The collection&#x27;s root documentation is synced with this README.</p>
+
+<h2>Frontend Tester</h2>
+
+<p>Open <code>Frontend/index.html</code> in a browser for a simple interface that exercises the above endpoints.</p>
+
+</div>
+</section>
 </body>
 </html>
