@@ -30,21 +30,6 @@
   <div class="container my-4">
     <h1 class="text-center mb-4">STL City SC Tools</h1>
 
-    <div class="postman-run-button"
-      data-postman-action="collection/fork"
-      data-postman-visibility="public"
-      data-postman-var-1="19513400-307dde5f-c494-472e-a23e-bb2f2953753d"
-      data-postman-collection-url="entityId=19513400-307dde5f-c494-472e-a23e-bb2f2953753d&entityType=collection&workspaceId=c5e525a1-433e-4939-9fd4-f1b6a0218f2b"></div>
-    <script type="text/javascript">
-      (function (p,o,s,t,m,a,n) {
-        !p[s] && (p[s] = function () { (p[t] || (p[t] = [])).push(arguments); });
-        !o.getElementById(s+t) && o.getElementsByTagName("head")[0].appendChild((
-          (n = o.createElement("script")),
-          (n.id = s+t), (n.async = 1), (n.src = m), n
-        ));
-      }(window, document, "_pm", "PostmanRunObject", "https://run.pstmn.io/button.js"));
-    </script>
-
     <div class="mb-4">
       <label for="apiBase" class="form-label">API Base URL</label>
       <input id="apiBase" type="text" class="form-control" value="https://arstesting.onrender.com">
@@ -203,7 +188,7 @@
       </div>
       <div class="mb-2">
         <label class="form-label">Podcast Name</label>
-        <input id="podcastName" class="form-control" value="The City Minute Podcast">
+        <input id="podcastName" class="form-control" value="The City Minute">
       </div>
       <div class="mb-2">
         <label class="form-label">Team Name</label>
@@ -456,7 +441,7 @@ Venue: Energizer Park
           <i class="bi bi-list"></i> List
         </button>
       </div>
-      <pre id="thumbList" class="border rounded p-3 mb-2" style="max-height:200px; overflow:auto;"></pre>
+      <div id="thumbList" class="border rounded p-3 mb-2 d-flex flex-wrap" style="max-height:200px; overflow:auto;"></div>
       <img id="thumbImage" class="img-fluid" style="max-height:300px;" hidden>
     </section>
     <section id="chat-section">
@@ -1332,7 +1317,16 @@ function withLoading(btn, fn) {
           const res = await fetch(`${apiBase()}/thumbnails`);
           if (!res.ok) throw new Error(res.statusText);
           const data = await res.json();
-          document.getElementById('thumbList').textContent = data.files.join('\n');
+          const list = document.getElementById('thumbList');
+          list.innerHTML = '';
+          data.files.forEach(name => {
+            const img = document.createElement('img');
+            img.src = `${apiBase()}/thumbs/${encodeURIComponent(name)}`;
+            img.alt = name;
+            img.className = 'img-thumbnail me-2 mb-2';
+            img.style.maxHeight = '150px';
+            list.appendChild(img);
+          });
         } catch (e) {
           alert('List failed: ' + e.message);
         }
@@ -1540,6 +1534,63 @@ npm start
 <p>  <code></code>`</p>
 <p>  Returns <code>{ &amp;quot;reply&amp;quot;: &amp;quot;...&amp;quot; }</code>.</p>
 
+<h3>Pronunciations</h3>
+
+<p><code>GET /pronunciations</code></p>
+<p>: List all stored pronunciation overrides.</p>
+
+<p><code>POST /pronunciations</code></p>
+<p>: Add a new term/pronunciation pair. Body <code>{ &quot;term&quot;: &quot;Foo&quot;, &quot;pronunciation&quot;: &quot;Foh&quot; }</code>.</p>
+
+<p><code>PUT /pronunciations</code></p>
+<p>: Update an existing term. Body <code>{ &quot;term&quot;: &quot;Foo&quot;, &quot;pronunciation&quot;: &quot;Foh&quot; }</code>.</p>
+
+<p><code>DELETE /pronunciations/:term</code></p>
+<p>: Remove a stored pronunciation by term.</p>
+
+<h3>Season Context</h3>
+
+<p><code>GET /season-context</code></p>
+<p>: Retrieve the saved season context summary.</p>
+
+<p><code>POST /season-context</code></p>
+<p>: Create a season context if one does not already exist.</p>
+
+<p><code>PUT /season-context</code></p>
+<p>: Replace the existing season context.</p>
+
+<p><code>POST /season-context/refresh</code></p>
+<p>: Generate and save a fresh summary for a team. Body <code>{ &quot;team_name&quot;: &quot;Saint Louis City SC&quot; }</code>.</p>
+
+<p><code>DELETE /season-context</code></p>
+<p>: Clear the saved season context.</p>
+
+<p><code>GET /new-season-context</code></p>
+<p>: Legacy endpoint that generates a summary via <code>team_name</code> query parameter.</p>
+
+<h3>System Prompts</h3>
+
+<p><code>GET /system-prompts</code></p>
+<p>: List all stored prompts.</p>
+
+<p><code>POST /system-prompts</code></p>
+<p>: Add a new prompt. Body <code>{ &quot;name&quot;: &quot;Default&quot;, &quot;prompt&quot;: &quot;...&quot; }</code>.</p>
+
+<p><code>GET /system-prompts/:id</code></p>
+<p>: Retrieve a single prompt by id.</p>
+
+<p><code>PUT /system-prompts/:id</code></p>
+<p>: Replace the name and text of an existing prompt.</p>
+
+<p><code>DELETE /system-prompts/:id</code></p>
+<p>: Remove a prompt.</p>
+
+<p><code>GET /system-prompt</code></p>
+<p>: Legacy endpoint returning the first prompt in the list.</p>
+
+<p><code>POST /system-prompt</code></p>
+<p>: Legacy endpoint replacing the first prompt. Body <code>{ &quot;system_prompt&quot;: &quot;...&quot; }</code>.</p>
+
 <h3>STL City SC Podcast</h3>
 
 <p><code>GET /stlcitysc/latest-post</code></p>
@@ -1548,9 +1599,18 @@ npm start
 <p><code>POST /stlcitysc/generate-script</code></p>
 <p>: Generate a podcast script from one or more articles. Provide <code>articleId</code> or <code>articleIds</code> along with optional customization fields such as <code>podcast_name</code>, <code>team_name</code>, <code>tone</code>, <code>length_min</code>, <code>season_context</code>, <code>custom_intro</code>, <code>custom_outro</code>, <code>announcements</code>, and <code>prompt_tweak</code>. Returns <code>{ &amp;quot;script&amp;quot;: &amp;quot;...&amp;quot; }</code>.</p>
 
+<p><code>POST /stlcitysc/edit-script</code></p>
+<p>: Apply revision instructions to an existing script. Body <code>{ &quot;script&quot;: &quot;...&quot;, &quot;instructions&quot;: &quot;shorten&quot; }</code>.</p>
+
 <p><code>POST /stlcitysc/generate-episode</code></p>
 <p>: Produce an episode in one‑shot. Accepts <code>articleId</code> or <code>articleIds</code> plus the same customization options as above along with host/voice selections. The optional <code>voice_context</code> field lets you adjust how Gemini reads the script (defaults to &quot;Read aloud in a charismatic, fun, sports podcast tone.&quot;). Returns <code>{ script, audio, audioUrl, transcript }</code> where <code>audio</code> is base64 encoded and <code>audioUrl</code> points to the stored file. The <code>transcript</code> object now includes this same <code>audioUrl</code> for convenience.</p>
 
+
+
+<h3>Intro/Outro Mixing</h3>
+
+<p><code>POST /intro-outro</code></p>
+<p>: Combine an intro clip, main audio, and outro clip into a single track. Upload all three files as <code>intro</code>, <code>audio</code>, and <code>outro</code> fields. Returns the merged WAV.</p>
 
 <h3>Thumbnails</h3>
 
