@@ -44,8 +44,8 @@
       <input id="geminiKey" type="password" class="form-control" placeholder="Enter Gemini key">
     </div>
     <div class="mb-4">
-      <label for="perplexityKey" class="form-label">Perplexity API Key</label>
-      <input id="perplexityKey" type="password" class="form-control" placeholder="Enter Perplexity key">
+      <label for="perplexityKey" class="form-label">Perplexity API Key (optional)</label>
+      <input id="perplexityKey" type="password" class="form-control" placeholder="Enter Perplexity key (optional)">
     </div>
 
     <div id="episodeWrapper" class="p-3 mb-4 border border-info rounded" style="background:#e8f8ff;">
@@ -69,6 +69,10 @@
       <div class="mb-2">
         <label class="form-label">System Prompt</label>
         <select id="epPromptSelect" class="form-select"></select>
+      </div>
+      <div class="mb-2">
+        <label class="form-label">Season Context</label>
+        <select id="epSeasonSelect" class="form-select"></select>
       </div>
       <div class="row g-2 mb-3">
         <div class="col">
@@ -187,6 +191,10 @@
         <select id="scriptPromptSelect" class="form-select"></select>
       </div>
       <div class="mb-2">
+        <label class="form-label">Season Context</label>
+        <select id="scriptSeasonSelect" class="form-select"></select>
+      </div>
+      <div class="mb-2">
         <label class="form-label">Podcast Name</label>
         <input id="podcastName" class="form-control" value="The City Minute">
       </div>
@@ -201,12 +209,6 @@
       <div class="mb-2" style="max-width:150px;">
         <label class="form-label">Length (min)</label>
         <input id="lengthMin" type="number" class="form-control" value="4">
-      </div>
-      <div class="mb-2" style="display: none;">
-        <label class="form-label">Season Context</label>
-        <textarea id="seasonContext" class="form-control" rows="4">St. Louis City SC’s 2025 MLS season has been defined by inconsistent results and tempered optimism. As of July 21, the team holds a record of 3 wins, 10 losses, and 6 draws, sitting near the bottom of the Western Conference. Notable highlights include a recent comeback 2-1 home win over the Portland Timbers—powered by Marcel Hartel’s brace—and a dramatic 3-3 draw against LA Galaxy, in which João Klauss scored the club’s first-ever MLS hat trick. While the team has earned points in four of its last five home matches, it continues to struggle overall, especially in attack and defensive stability.
-The mood among fans and commentators is largely frustrated and disappointed, pointing to missed chances, inconsistency, and a sense of underachievement compared to preseason hopes. There’s praise for standout players like Klauss and Hartel, but the prevailing sentiment is a call for improvement and deeper connection between club leadership and supporters.
-After missing out on Leagues Cup qualification and making only a moderate run in the U.S. Open Cup, St. Louis now looks to regroup for the remainder of the league season, hoping for stronger form and results at Energizer Park.</textarea>
       </div>
       <div class="mb-2">
         <label class="form-label">Custom Intro</label>
@@ -488,34 +490,34 @@ Venue: Energizer Park
     </section>
 
       <section id="season-context-section">
-        <h2 class="h4">Season Context <small class="text-muted">(/season-context)</small></h2>
-        <div class="mb-2">
-          <button id="fetchSeasonContextBtn" class="btn btn-info mb-2">
-            <i class="bi bi-download"></i> Fetch Season Context
-          </button>
-        </div>
+        <h2 class="h4">Season Contexts <small class="text-muted">(/season-contexts)</small></h2>
         <div class="mb-2">
           <label class="form-label">Team Name</label>
-          <input id="seasonTeamName" class="form-control" value="Saint Louis City SC">
-        </div>
-        <div class="mb-2">
-          <button id="generateSeasonContextBtn" class="btn btn-warning mb-2">
-            <i class="bi bi-stars"></i> Refresh via Perplexity
-          </button>
+          <input id="scTeamName" class="form-control">
         </div>
         <div class="mb-2">
           <label class="form-label">Season Context</label>
-          <textarea id="seasonContextTest" class="form-control" rows="5" placeholder="Season context will appear here..."></textarea>
+          <textarea id="scText" class="form-control" rows="5"></textarea>
         </div>
         <div class="mb-2">
-          <button id="updateSeasonContextBtn" class="btn btn-success mb-2">
-            <i class="bi bi-upload"></i> Update Season Context
+          <button id="scGenerateBtn" class="btn btn-warning me-2 mb-2">
+            <i class="bi bi-stars"></i> Refresh via Perplexity
           </button>
-          <button id="deleteSeasonContextBtn" class="btn btn-danger mb-2">
-            <i class="bi bi-trash"></i> Delete Season Context
+          <button id="scGenerateChatGPTBtn" class="btn btn-primary mb-2">
+            <i class="bi bi-stars"></i> Refresh via ChatGPT Search
+          </button>
+        </div>
+        <div class="mb-2">
+          <button id="newSeasonContextBtn" class="btn btn-secondary me-2">
+            <i class="bi bi-file-earmark-plus"></i> New
+          </button>
+          <button id="saveSeasonContextBtn" class="btn btn-success">
+            <i class="bi bi-save"></i> Save
           </button>
         </div>
         <div id="seasonContextStatus" class="text-success mb-2"></div>
+        <h5 class="mt-3">Existing Season Contexts</h5>
+        <ul id="seasonContextList" class="list-group"></ul>
       </section>
 
       <section id="system-prompts-section">
@@ -562,111 +564,166 @@ Venue: Energizer Park
   (function(){
     // Front-end logic for interacting with the API. The functions below
     // correspond to the various endpoints exposed by the server.
-      // --- Season Context Test UI ---
-      const fetchSeasonContextBtn = document.getElementById('fetchSeasonContextBtn');
-      const generateSeasonContextBtn = document.getElementById('generateSeasonContextBtn');
-      const updateSeasonContextBtn = document.getElementById('updateSeasonContextBtn');
-      const deleteSeasonContextBtn = document.getElementById('deleteSeasonContextBtn');
-      const seasonContextTest = document.getElementById('seasonContextTest');
-      const seasonContextStatus = document.getElementById('seasonContextStatus');
-      const seasonTeamName = document.getElementById('seasonTeamName');
-      let seasonExists = false;
+      // --- Season Context UI ---
+      const seasonContextList = document.getElementById('seasonContextList');
+      const scTeamName = document.getElementById('scTeamName');
+      const scText = document.getElementById('scText');
+      const scStatus = document.getElementById('seasonContextStatus');
+      const saveSeasonContextBtn = document.getElementById('saveSeasonContextBtn');
+      const newSeasonContextBtn = document.getElementById('newSeasonContextBtn');
+      const scGenerateBtn = document.getElementById('scGenerateBtn');
+      const scGenerateChatGPTBtn = document.getElementById('scGenerateChatGPTBtn');
+      let seasonContexts = [];
+      let currentSeasonContextId = null;
 
-      fetchSeasonContextBtn.onclick = async function() {
-        seasonContextStatus.textContent = '';
-        seasonContextTest.value = 'Loading…';
+      async function loadSeasonContexts() {
         try {
-          const res = await fetch(`${apiBase()}/season-context`);
-          if (!res.ok) throw new Error(res.statusText);
+          const res = await fetch(`${apiBase()}/season-contexts`);
           const data = await res.json();
-          seasonContextTest.value = data.season_context || '';
-          seasonExists = !!data.season_context;
+          seasonContexts = data.season_contexts || [];
+          seasonContextList.innerHTML = seasonContexts.map(c => `
+            <li class="list-group-item d-flex justify-content-between">
+              <span>${c.team_name}</span>
+              <div>
+                <button class="btn btn-sm btn-primary me-2" data-edit="${c.id}"><i class="bi bi-pencil"></i></button>
+                <button class="btn btn-sm btn-danger" data-del="${c.id}"><i class="bi bi-trash"></i></button>
+              </div>
+            </li>`).join('');
+          const options = seasonContexts.map(c => `<option value="${c.id}">${c.team_name}</option>`).join('');
+          const scriptSel = document.getElementById('scriptSeasonSelect');
+          const epSel = document.getElementById('epSeasonSelect');
+          if (scriptSel) scriptSel.innerHTML = options;
+          if (epSel) epSel.innerHTML = options;
         } catch (e) {
-          seasonContextTest.value = '';
-          seasonContextStatus.textContent = 'Error: ' + e.message;
-          seasonContextStatus.className = 'text-danger mb-2';
+          seasonContextList.innerHTML = '<li class="list-group-item text-danger">Error loading</li>';
+        }
+      }
+
+      newSeasonContextBtn.onclick = () => {
+        currentSeasonContextId = null;
+        scTeamName.value = '';
+        scText.value = '';
+        scStatus.textContent = '';
+      };
+
+      saveSeasonContextBtn.onclick = withLoading(saveSeasonContextBtn, async () => {
+        const team_name = scTeamName.value.trim();
+        const season_context = scText.value.trim();
+        if (!team_name || !season_context) {
+          scStatus.textContent = 'Enter team name and season context.';
+          scStatus.className = 'text-danger mb-2';
+          return;
+        }
+        const method = currentSeasonContextId ? 'PUT' : 'POST';
+        const url = currentSeasonContextId ? `${apiBase()}/season-contexts/${currentSeasonContextId}` : `${apiBase()}/season-contexts`;
+        try {
+          const res = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ team_name, season_context })
+          });
+          if (!res.ok) throw new Error(res.statusText);
+          currentSeasonContextId = null;
+          scTeamName.value = '';
+          scText.value = '';
+          scStatus.textContent = 'Saved!';
+          scStatus.className = 'text-success mb-2';
+          await loadSeasonContexts();
+        } catch (e) {
+          scStatus.textContent = 'Error: ' + e.message;
+          scStatus.className = 'text-danger mb-2';
+        }
+      });
+
+      seasonContextList.onclick = async e => {
+        const editId = e.target.closest('[data-edit]')?.dataset.edit;
+        const delId = e.target.closest('[data-del]')?.dataset.del;
+        if (editId) {
+          const ctx = seasonContexts.find(x => x.id === editId);
+          if (ctx) {
+            currentSeasonContextId = ctx.id;
+            scTeamName.value = ctx.team_name;
+            scText.value = ctx.season_context;
+            scStatus.textContent = '';
+          }
+        }
+        if (delId && confirm('Delete this season context?')) {
+          const btn = e.target.closest('button');
+          await withLoading(btn, async () => {
+            const res = await fetch(`${apiBase()}/season-contexts/${delId}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error(res.statusText);
+            if (currentSeasonContextId === delId) {
+              currentSeasonContextId = null;
+              scTeamName.value = '';
+              scText.value = '';
+            }
+            await loadSeasonContexts();
+          })().catch(err => {
+            scStatus.textContent = 'Error: ' + err.message;
+            scStatus.className = 'text-danger mb-2';
+          });
         }
       };
 
-      generateSeasonContextBtn.onclick = async function() {
-        seasonContextStatus.textContent = '';
-        const team = seasonTeamName.value.trim();
+      scGenerateBtn.onclick = withLoading(scGenerateBtn, async () => {
+        const team = scTeamName.value.trim();
         if (!team) {
-          seasonContextStatus.textContent = 'Enter team name.';
-          seasonContextStatus.className = 'text-danger mb-2';
+          scStatus.textContent = 'Enter team name.';
+          scStatus.className = 'text-danger mb-2';
           return;
         }
-        seasonContextStatus.textContent = 'Generating…';
-        seasonContextStatus.className = 'text-muted mb-2';
+        scStatus.textContent = 'Generating…';
+        scStatus.className = 'text-muted mb-2';
         try {
-          const res = await fetch(`${apiBase()}/season-context/refresh`, {
+          const res = await fetch(`${apiBase()}/season-contexts/refresh`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ team_name: team })
           });
           if (!res.ok) throw new Error(res.statusText);
           const data = await res.json();
-          seasonContextTest.value = data.season_context || '';
-          seasonExists = !!data.season_context;
-          seasonContextStatus.textContent = 'Season context generated!';
-          seasonContextStatus.className = 'text-success mb-2';
+          currentSeasonContextId = data.id;
+          scTeamName.value = data.team_name;
+          scText.value = data.season_context || '';
+          scStatus.textContent = 'Season context generated!';
+          scStatus.className = 'text-success mb-2';
+          await loadSeasonContexts();
         } catch (e) {
-          seasonContextStatus.textContent = 'Error: ' + e.message;
-          seasonContextStatus.className = 'text-danger mb-2';
+          scStatus.textContent = 'Error: ' + e.message;
+          scStatus.className = 'text-danger mb-2';
         }
-      };
+      });
 
-      updateSeasonContextBtn.onclick = async function() {
-        seasonContextStatus.textContent = '';
-        const newCtx = seasonContextTest.value.trim();
-        if (!newCtx) {
-          seasonContextStatus.textContent = 'Enter season context.';
-          seasonContextStatus.className = 'text-danger mb-2';
+      scGenerateChatGPTBtn.onclick = withLoading(scGenerateChatGPTBtn, async () => {
+        const team = scTeamName.value.trim();
+        if (!team) {
+          scStatus.textContent = 'Enter team name.';
+          scStatus.className = 'text-danger mb-2';
           return;
         }
+        scStatus.textContent = 'Generating…';
+        scStatus.className = 'text-muted mb-2';
         try {
-          const method = seasonExists ? 'PUT' : 'POST';
-          const res = await fetch(`${apiBase()}/season-context`, {
-            method,
+          const res = await fetch(`${apiBase()}/season-contexts/refresh-chatgpt`, {
+            method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ season_context: newCtx })
+            body: JSON.stringify({ team_name: team })
           });
           if (!res.ok) throw new Error(res.statusText);
           const data = await res.json();
-          if (data.success) {
-            seasonExists = true;
-            seasonContextStatus.textContent = 'Season context saved!';
-            seasonContextStatus.className = 'text-success mb-2';
-          } else {
-            seasonContextStatus.textContent = 'Update failed.';
-            seasonContextStatus.className = 'text-danger mb-2';
-          }
+          currentSeasonContextId = data.id;
+          scTeamName.value = data.team_name;
+          scText.value = data.season_context || '';
+          scStatus.textContent = 'Season context generated!';
+          scStatus.className = 'text-success mb-2';
+          await loadSeasonContexts();
         } catch (e) {
-          seasonContextStatus.textContent = 'Error: ' + e.message;
-          seasonContextStatus.className = 'text-danger mb-2';
+          scStatus.textContent = 'Error: ' + e.message;
+          scStatus.className = 'text-danger mb-2';
         }
-      };
+      });
 
-      deleteSeasonContextBtn.onclick = async function() {
-        seasonContextStatus.textContent = '';
-        try {
-          const res = await fetch(`${apiBase()}/season-context`, { method: 'DELETE' });
-          if (!res.ok) throw new Error(res.statusText);
-          const data = await res.json();
-          if (data.success) {
-            seasonContextTest.value = '';
-            seasonExists = false;
-            seasonContextStatus.textContent = 'Season context deleted.';
-            seasonContextStatus.className = 'text-success mb-2';
-          } else {
-            seasonContextStatus.textContent = 'Delete failed.';
-            seasonContextStatus.className = 'text-danger mb-2';
-          }
-        } catch (e) {
-          seasonContextStatus.textContent = 'Error: ' + e.message;
-          seasonContextStatus.className = 'text-danger mb-2';
-        }
-      };
+      document.addEventListener('DOMContentLoaded', loadSeasonContexts);
 
       // --- System Prompts UI ---
       const promptList = document.getElementById('promptList');
@@ -1091,7 +1148,7 @@ function withLoading(btn, fn) {
           articleIds: ids,
           podcast_name: document.getElementById('podcastName').value,
           team_name: document.getElementById('teamName').value,
-          season_context: document.getElementById('seasonContext').value,
+          seasonContextId: document.getElementById('scriptSeasonSelect').value,
           tone: document.getElementById('tone').value,
           length_min: document.getElementById('lengthMin').value,
           custom_intro: document.getElementById('customIntro').value,
@@ -1166,7 +1223,8 @@ function withLoading(btn, fn) {
           voice_b: document.getElementById('epHostBVoice').value,
           prompt_tweak: document.getElementById('epPromptTweak').value,
           voice_context: document.getElementById('epVoiceContext').value,
-          promptId: document.getElementById('epPromptSelect').value
+          promptId: document.getElementById('epPromptSelect').value,
+          seasonContextId: document.getElementById('epSeasonSelect').value
         };
         progress.style.display = 'block';
         try {
@@ -1449,7 +1507,12 @@ function withLoading(btn, fn) {
 <li>Optional persistent storage if the host filesystem is temporary.</li>
 </ul>
 
-<h3>Configure</h3>
+<h3>Clone and configure</h3>
+
+<pre><code>
+git clone https://github.com/Knooblegooble/ARSTesting.git
+cd ARSTesting
+</code></pre>
 
 <p>Create a <code>.env</code> file in the project root:</p>
 
@@ -1545,20 +1608,26 @@ npm start
 
 <h3>Season Context</h3>
 
-<p><code>GET /season-context</code></p>
-<p>: Retrieve the saved season context summary.</p>
+<p><code>GET /season-contexts</code></p>
+<p>: List all stored season contexts.</p>
 
-<p><code>POST /season-context</code></p>
-<p>: Create a season context if one does not already exist.</p>
+<p><code>POST /season-contexts</code></p>
+<p>: Add a new season context. Body <code>{ &quot;team_name&quot;: &quot;Saint Louis City SC&quot;, &quot;season_context&quot;: &quot;...&quot; }</code>.</p>
 
-<p><code>PUT /season-context</code></p>
+<p><code>GET /season-contexts/:id</code></p>
+<p>: Retrieve a single season context by id.</p>
+
+<p><code>PUT /season-contexts/:id</code></p>
 <p>: Replace the existing season context.</p>
 
-<p><code>POST /season-context/refresh</code></p>
+<p><code>POST /season-contexts/refresh</code></p>
 <p>: Generate and save a fresh summary for a team. Body <code>{ &quot;team_name&quot;: &quot;Saint Louis City SC&quot; }</code>.</p>
 
-<p><code>DELETE /season-context</code></p>
-<p>: Clear the saved season context.</p>
+<p><code>POST /season-contexts/refresh-chatgpt</code></p>
+<p>: Generate and save a fresh summary via ChatGPT search. Body <code>{ &quot;team_name&quot;: &quot;Saint Louis City SC&quot; }</code>.</p>
+
+<p><code>DELETE /season-contexts/:id</code></p>
+<p>: Remove a stored season context.</p>
 
 <p><code>GET /new-season-context</code></p>
 <p>: Legacy endpoint that generates a summary via <code>team_name</code> query parameter.</p>
