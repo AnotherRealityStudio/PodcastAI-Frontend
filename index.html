@@ -157,6 +157,13 @@
       </div>
       </div>
       <div class="mb-2">
+        <label class="form-label">Voice Model</label>
+        <select id="epVoiceModel" class="form-select">
+          <option value="gemini-2.5-flash-preview-tts" selected>Flash</option>
+          <option value="gemini-2.5-pro-preview-tts">Pro</option>
+        </select>
+      </div>
+      <div class="mb-2">
         <label class="form-label">Voice Context</label>
         <input id="epVoiceContext" class="form-control" value="Read aloud in a charismatic, fun, sports podcast tone.">
       </div>
@@ -388,6 +395,14 @@ Venue: Energizer Park
             <option>Sulafat</option>
           </select>
         </div>
+      </div>
+      
+      <div class="mb-3">
+        <label class="form-label">Voice Model</label>
+        <select id="voiceModel" class="form-select">
+          <option value="gemini-2.5-flash-preview-tts" selected>Flash</option>
+          <option value="gemini-2.5-pro-preview-tts">Pro</option>
+        </select>
       </div>
 
       <div class="mb-3">
@@ -1055,6 +1070,7 @@ function withLoading(btn, fn) {
         const s1Voice  = document.getElementById('speaker1Voice').value;
         const s2Name   = document.getElementById('speaker2Name').value.trim();
         const s2Voice  = document.getElementById('speaker2Voice').value;
+        const model    = document.getElementById('voiceModel').value;
         if (!prompt) return alert('Enter a prompt');
 
         try {
@@ -1067,10 +1083,15 @@ function withLoading(btn, fn) {
               speaker1Voice: s1Voice,
               speaker2Name: s2Name,
               speaker2Voice: s2Voice,
-              voiceContext: document.getElementById('voiceContext').value
+              voiceContext: document.getElementById('voiceContext').value,
+              model
             })
           });
-        if (!res.ok) throw new Error(res.statusText);
+        if (!res.ok) {
+          let msg = res.statusText;
+          try { const err = await res.json(); msg = err.error || msg; } catch {}
+          throw new Error(msg);
+        }
 
         const blob = await res.blob();
         const player = document.getElementById('dlgPlayer');
@@ -1223,6 +1244,7 @@ function withLoading(btn, fn) {
           voice_b: document.getElementById('epHostBVoice').value,
           prompt_tweak: document.getElementById('epPromptTweak').value,
           voice_context: document.getElementById('epVoiceContext').value,
+          voice_model: document.getElementById('epVoiceModel').value,
           promptId: document.getElementById('epPromptSelect').value,
           seasonContextId: document.getElementById('epSeasonSelect').value
         };
@@ -1233,7 +1255,11 @@ function withLoading(btn, fn) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
           });
-          if (!res.ok) throw new Error(res.statusText);
+          if (!res.ok) {
+            let msg = res.statusText;
+            try { const err = await res.json(); msg = err.error || msg; } catch {}
+            throw new Error(msg);
+          }
           const data = await res.json();
           scriptOut.textContent = data.script || '';
           if (data.audioUrl) {
@@ -1581,6 +1607,7 @@ npm start
 <p>  - <code>speaker1Name</code>, <code>speaker1Voice</code></p>
 <p>  - <code>speaker2Name</code>, <code>speaker2Voice</code></p>
 <p>  - <code>voiceContext</code> – optional preamble describing how to read the text (defaults to &quot;Read aloud in a charismatic, fun, sports podcast tone.&quot;)</p>
+<p>  - <code>model</code> – optional voice model (<code>gemini-2.5-flash-preview-tts</code> default or <code>gemini-2.5-pro-preview-tts</code>)</p>
 <p>  Returns raw audio (<code>audio/wav</code> or other type returned by Gemini).</p>
 
 <h3>ChatGPT Proxy</h3>
@@ -1667,7 +1694,7 @@ npm start
 <p>: Apply revision instructions to an existing script. Body <code>{ &quot;script&quot;: &quot;...&quot;, &quot;instructions&quot;: &quot;shorten&quot; }</code>.</p>
 
 <p><code>POST /stlcitysc/generate-episode</code></p>
-<p>: Produce an episode in one‑shot. Accepts <code>articleId</code> or <code>articleIds</code> plus the same customization options as above along with host/voice selections. The optional <code>voice_context</code> field lets you adjust how Gemini reads the script (defaults to &quot;Read aloud in a charismatic, fun, sports podcast tone.&quot;). Returns <code>{ script, audio, audioUrl, transcript }</code> where <code>audio</code> is base64 encoded and <code>audioUrl</code> points to the stored file. The <code>transcript</code> object now includes this same <code>audioUrl</code> for convenience.</p>
+<p>: Produce an episode in one‑shot. Accepts <code>articleId</code> or <code>articleIds</code> plus the same customization options as above along with host/voice selections. The optional <code>voice_context</code> field lets you adjust how Gemini reads the script (defaults to &quot;Read aloud in a charismatic, fun, sports podcast tone.&quot;) and <code>voice_model</code> chooses between <code>gemini-2.5-flash-preview-tts</code> (default) and <code>gemini-2.5-pro-preview-tts</code>. Returns <code>{ script, audio, audioUrl, transcript }</code> where <code>audio</code> is base64 encoded and <code>audioUrl</code> points to the stored file. The <code>transcript</code> object now includes this same <code>audioUrl</code> for convenience.</p>
 
 
 
