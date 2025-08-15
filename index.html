@@ -276,6 +276,52 @@ Venue: Energizer Park
       <button id="editScriptBtn" class="btn btn-secondary mb-2">
         <i class="bi bi-pencil"></i> Edit Script
       </button>
+      <div class="mb-2">
+        <button id="saveGeneratedScriptBtn" class="btn btn-secondary">
+          <i class="bi bi-save"></i> Save
+        </button>
+      </div>
+    </section>
+    <section id="translate-section">
+      <h2 class="h4">Translate Scripts <small class="text-muted">(/translate-script)</small></h2>
+        <div class="mb-2">
+          <label class="form-label">Script Name</label>
+          <input id="scriptName" class="form-control">
+        </div>
+      <div class="mb-2">
+        <label class="form-label">Script Body</label>
+        <textarea id="scriptBody" class="form-control" rows="5"></textarea>
+      </div>
+      <div class="mb-2">
+        <button id="newScriptBtn" class="btn btn-secondary me-2">
+          <i class="bi bi-file-earmark-plus"></i> New
+        </button>
+        <button id="saveScriptBtn" class="btn btn-success">
+          <i class="bi bi-save"></i> Save
+        </button>
+      </div>
+      <div class="input-group mb-2">
+        <select id="translateLangs" class="form-select" multiple>
+          <option value="es">Spanish</option>
+          <option value="zh">Chinese</option>
+          <option value="tl">Tagalog</option>
+          <option value="vi">Vietnamese</option>
+          <option value="ar">Arabic</option>
+          <option value="fr">French</option>
+          <option value="ko">Korean</option>
+          <option value="ru">Russian</option>
+          <option value="de">German</option>
+          <option value="pt">Portuguese</option>
+        </select>
+        <button id="translateScriptBtn" class="btn btn-success">
+          <i class="bi bi-translate"></i> Translate
+        </button>
+      </div>
+      <small class="text-muted d-block mb-2">Hold Ctrl (Cmd on Mac) to select multiple languages.</small>
+      <div id="scriptStatus" class="text-success mb-2"></div>
+      <pre id="translateOut" class="border rounded p-3 mb-2" style="max-height:300px; overflow:auto;"></pre>
+      <h5 class="mt-3">Existing Scripts</h5>
+      <ul id="scriptList" class="list-group"></ul>
     </section>
     <section id="audio-section">
       <h2 class="h4">Audio Storage <small class="text-muted">(/audio-files)</small></h2>
@@ -1121,7 +1167,14 @@ function withLoading(btn, fn) {
         else if (Array.isArray(data.docs)) posts = data.docs;
         else if (Array.isArray(data.data)) posts = data.data;
         out.innerHTML = posts.map(p => {
+          const hidden = (p.availability && p.availability !== 'public') || p.hide_web;
+          const hiddenMsg = hidden ? ' <span class="text-warning" title="This post is hidden">⚠️ Hidden</span>' : '';
           const date = p.publish_date_iso || p.updated_date_iso || '';
+          const snippet = (p.body || '')
+            .replace(/<[^>]*>/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .substring(0, 200);
           return `
             <div class="col-12">
               <div class="card">
@@ -1129,12 +1182,12 @@ function withLoading(btn, fn) {
                   <div class="form-check">
                     <input class="form-check-input ep-article-check" type="checkbox" value="${p.id}" id="chk-${p.id}">
                     <label class="form-check-label" for="chk-${p.id}">
-                      <strong>${p.full_title || p.title || ''}</strong>
+                      <strong>${p.full_title || p.title || ''}</strong>${hiddenMsg}
                       <span class="badge bg-secondary ms-2">${p.type}</span>
                       <small class="text-muted ms-2">${date}</small>
                     </label>
                   </div>
-                  <pre class="mt-2 small">${(p.body || '').toString().substring(0,1000)}</pre>
+                  <pre class="mt-2 small">${snippet}</pre>
                 </div>
               </div>
             </div>`;
@@ -1215,6 +1268,166 @@ function withLoading(btn, fn) {
           out.textContent = 'Error: ' + e.message;
         }
       });
+
+      let generatedScriptName = null;
+      const saveGeneratedScriptBtn = document.getElementById('saveGeneratedScriptBtn');
+      saveGeneratedScriptBtn.onclick = withLoading(saveGeneratedScriptBtn, async () => {
+        const script = document.getElementById('podcastScript').textContent.trim();
+        if (!script) return alert('Generate a script first.');
+        const url = generatedScriptName ? `${apiBase()}/scripts/${encodeURIComponent(generatedScriptName)}` : `${apiBase()}/scripts`;
+        const method = generatedScriptName ? 'PUT' : 'POST';
+        const payload = { body: script, language: 'en' };
+        if (!generatedScriptName) {
+          generatedScriptName = Date.now().toString();
+          payload.name = generatedScriptName;
+        }
+        const res = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || res.statusText);
+        generatedScriptName = data.name;
+      });
+
+      // --- Script Translation UI ---
+      const scriptList = document.getElementById('scriptList');
+      const scriptNameInput = document.getElementById('scriptName');
+      const scriptBody = document.getElementById('scriptBody');
+      const scriptStatus = document.getElementById('scriptStatus');
+      const newScriptBtn = document.getElementById('newScriptBtn');
+      const saveScriptBtn = document.getElementById('saveScriptBtn');
+      const translateScriptBtn = document.getElementById('translateScriptBtn');
+      const translateLangs = document.getElementById('translateLangs');
+      const translateOut = document.getElementById('translateOut');
+      let scripts = [];
+      let currentScriptName = null;
+
+      async function loadScripts() {
+        try {
+          const res = await fetch(`${apiBase()}/scripts`);
+            scripts = await res.json();
+            scriptList.innerHTML = scripts.map(s => `
+              <li class="list-group-item d-flex justify-content-between">
+                <span>${s.name} (${s.language})</span>
+                <div>
+                  <button class="btn btn-sm btn-primary me-2" data-edit="${s.name}"><i class="bi bi-pencil"></i></button>
+                  <button class="btn btn-sm btn-danger" data-del="${s.name}"><i class="bi bi-trash"></i></button>
+                </div>
+              </li>`).join('');
+        } catch (e) {
+          scriptList.innerHTML = '<li class="list-group-item text-danger">Error loading</li>';
+        }
+      }
+
+      newScriptBtn.onclick = () => {
+        currentScriptName = null;
+        scriptNameInput.value = '';
+        scriptBody.value = '';
+        scriptStatus.textContent = '';
+        translateOut.textContent = '';
+      };
+
+      saveScriptBtn.onclick = withLoading(saveScriptBtn, async () => {
+        const body = scriptBody.value.trim();
+        if (!body) {
+          scriptStatus.textContent = 'Enter script body.';
+          scriptStatus.className = 'text-danger mb-2';
+          return;
+        }
+          const name = scriptNameInput.value.trim();
+          const method = currentScriptName ? 'PUT' : 'POST';
+          const url = currentScriptName ? `${apiBase()}/scripts/${encodeURIComponent(currentScriptName)}` : `${apiBase()}/scripts`;
+          const payload = { body, language: 'en' };
+          if (!currentScriptName && name) payload.name = name;
+          if (!currentScriptName && !name) {
+            scriptStatus.textContent = 'Enter script name.';
+            scriptStatus.className = 'text-danger mb-2';
+            return;
+          }
+        try {
+          const res = await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          if (!res.ok) throw new Error(res.statusText);
+            const data = await res.json();
+            currentScriptName = data.name;
+            scriptNameInput.value = data.name;
+            scriptStatus.textContent = 'Saved!';
+            scriptStatus.className = 'text-success mb-2';
+            await loadScripts();
+        } catch (e) {
+          scriptStatus.textContent = 'Error: ' + e.message;
+          scriptStatus.className = 'text-danger mb-2';
+        }
+      });
+
+      scriptList.onclick = async e => {
+        const editName = e.target.closest('[data-edit]')?.dataset.edit;
+        const delName = e.target.closest('[data-del]')?.dataset.del;
+        if (editName) {
+          try {
+            const res = await fetch(`${apiBase()}/scripts/${encodeURIComponent(editName)}`);
+            if (!res.ok) throw new Error(res.statusText);
+            const data = await res.json();
+            currentScriptName = data.name;
+            scriptNameInput.value = data.name;
+            scriptBody.value = data.body || '';
+            scriptStatus.textContent = '';
+            translateOut.textContent = '';
+          } catch (err) {
+            scriptStatus.textContent = 'Error: ' + err.message;
+            scriptStatus.className = 'text-danger mb-2';
+          }
+        }
+        if (delName && confirm('Delete this script?')) {
+          const btn = e.target.closest('button');
+          await withLoading(btn, async () => {
+            const res = await fetch(`${apiBase()}/scripts/${encodeURIComponent(delName)}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error(res.statusText);
+            if (currentScriptName === delName) {
+              currentScriptName = null;
+              scriptNameInput.value = '';
+              scriptBody.value = '';
+              translateOut.textContent = '';
+            }
+            await loadScripts();
+          })().catch(err => {
+            scriptStatus.textContent = 'Error: ' + err.message;
+            scriptStatus.className = 'text-danger mb-2';
+          });
+        }
+      };
+
+      translateScriptBtn.onclick = withLoading(translateScriptBtn, async () => {
+        if (!currentScriptName) {
+          scriptStatus.textContent = 'Select a script first.';
+          scriptStatus.className = 'text-danger mb-2';
+          return;
+        }
+        const langs = Array.from(translateLangs.selectedOptions).map(o => o.value);
+        const payload = { name: currentScriptName };
+        if (langs.length) payload.languages = langs;
+        try {
+          const res = await fetch(`${apiBase()}/translate-script`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          if (!res.ok) throw new Error(res.statusText);
+          const data = await res.json();
+          translateOut.textContent = JSON.stringify(data, null, 2);
+          scriptStatus.textContent = '';
+        } catch (e) {
+          scriptStatus.textContent = 'Error: ' + e.message;
+          scriptStatus.className = 'text-danger mb-2';
+        }
+      });
+
+      document.addEventListener('DOMContentLoaded', loadScripts);
 
       // — Episode Generation —
       // Create full episode audio, script, and transcript
