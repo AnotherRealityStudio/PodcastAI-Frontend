@@ -1907,7 +1907,7 @@ npm start
 <p>: Apply revision instructions to an existing script. Body <code>{ &quot;script&quot;: &quot;...&quot;, &quot;instructions&quot;: &quot;shorten&quot; }</code>.</p>
 
 <p><code>POST /stlcitysc/generate-episode</code></p>
-<p>: Produce an episode in one‑shot. Accepts <code>articleId</code> or <code>articleIds</code> plus the same customization options as above along with host/voice selections. The optional <code>voice_context</code> field lets you adjust how Gemini reads the script (defaults to &quot;Read aloud in a charismatic, fun, sports podcast tone.&quot;) and <code>voice_model</code> chooses between <code>gemini-2.5-flash-preview-tts</code> (default) and <code>gemini-2.5-pro-preview-tts</code>. Returns <code>{ script, audio, audioUrl, transcript }</code> where <code>audio</code> is base64 encoded and <code>audioUrl</code> points to the stored file. The <code>transcript</code> object now includes this same <code>audioUrl</code> for convenience.</p>
+<p>: Produce an episode in one‑shot. Accepts <code>articleId</code> or <code>articleIds</code> plus the same customization options as above along with <code>promptId</code>, <code>seasonContextId</code>, and host/voice selections. The optional <code>voice_context</code> field lets you adjust how Gemini reads the script (defaults to &quot;Read aloud in a charismatic, fun, sports podcast tone.&quot;) and <code>voice_model</code> chooses between <code>gemini-2.5-flash-preview-tts</code> (default) and <code>gemini-2.5-pro-preview-tts</code>. Returns <code>{ script, audio, audioUrl, transcript }</code> where <code>audio</code> is base64 encoded and <code>audioUrl</code> points to the stored file. The <code>transcript</code> object now includes this same <code>audioUrl</code> for convenience.</p>
 
 
 
@@ -1948,9 +1948,9 @@ npm start
 
 <p>A ready‑to‑use Postman collection is provided in <code>postman_collection.json</code>. Import this file into Postman and set the collection variable <code>baseUrl</code> to the address where the server is running. The collection&#x27;s root documentation is synced with this README.</p>
 
-<h2>Frontend Tester</h2>
+<h2>Frontend Usage</h2>
 
-<p>Open <code>Frontend/index.html</code> in a browser for a simple interface that exercises the above endpoints.</p>
+<p>Open <code>Frontend/index.html</code> in a browser. The top <strong>Generate Episode</strong> section orchestrates multiple API calls to build a script, synthesize dialogue, store audio, create a thumbnail, and return a transcript. The sections that follow expose those individual tools (audio storage, dialogue, scripts, thumbnails, etc.) so they can be mixed and matched for custom workflows or manual testing.</p>
 
 </div>
 </section>
